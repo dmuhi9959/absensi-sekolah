@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aplikasi Absensi Sekolah</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+.header{background:#1a8a6f;color:#fff;padding:15px;text-align:center;font-weight:bold;font-size:1.1rem;box-shadow:0 2px 5px rgba(0,0,0,0.2);position:sticky;top:0;z-index:100}
+.content{flex:1;overflow-y:auto;padding:15px;padding-bottom:70px}
+.menu-card{background:#fff;border-radius:12px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;align-items:center;gap:15px;cursor:pointer;transition:0.2s}
+.menu-card:hover{background:#f9f9f9}
+.menu-card .icon{width:45px;height:45px;border-radius:10px;background:#1a8a6f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.menu-card .text h3{font-size:0.95rem;color:#333}
+.menu-card .text p{font-size:0.75rem;color:#666;margin-top:3px}
+.folder-title{color:#555;font-size:0.85rem;margin:15px 0 10px;font-weight:bold;text-transform:uppercase;border-left:4px solid #1a8a6f;padding-left:10px}
+
+/* Bottom Navigation */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
+.nav-item{display:flex;flex-direction:column;align-items:center;color:#888;cursor:pointer;font-size:0.7rem;gap:4px}
+.nav-item.active{color:#1a8a6f}
+.nav-item i{font-size:1.2rem}
+
+/* Form & Table */
+.form-group{margin-bottom:15px}
+.form-group label{display:block;font-size:0.8rem;color:#555;margin-bottom:5px;font-weight:600}
+.form-group input, .form-group select{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:1rem;font-family:inherit}
+.btn{width:100%;padding:14px;background:#1a8a6f;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer;margin-top:10px}
+.btn-danger{background:#f44336}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+th{background:#1a8a6f;color:#fff;padding:12px;text-align:left;font-size:0.8rem}
+td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
+.btn-action{padding:5px 10px;border:none;border-radius:5px;cursor:pointer;color:#fff;font-size:0.75rem}
+.btn-edit{background:#ffc107;color:#000}
+.btn-del{background:#f44336}
+.back-btn{background:transparent;color:#1a8a6f;border:none;font-size:1rem;cursor:pointer;margin-bottom:15px;font-weight:bold;display:flex;align-items:center;gap:5px}
+</style>
+</head>
+<body>
+
+<div class="header" id="pageTitle">Dashboard Absensi</div>
+
+<div class="content" id="mainContent">
+    <!-- Tampilan Default: Dashboard -->
+    <div class="folder-title">Rekap Hari Ini</div>
+    <div class="menu-card">
+        <div class="icon" style="background:#4caf50"><i class="fas fa-door-open"></i></div>
+        <div class="text"><h3>Hadir</h3><p id="statHadir">0 Siswa</p></div>
+    </div>
+    <div class="menu-card">
+        <div class="icon" style="background:#ff9800"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="text"><h3>Izin / Sakit</h3><p id="statIzin">0 Siswa</p></div>
+    </div>
+    <div class="menu-card">
+        <div class="icon" style="background:#f44336"><i class="fas fa-user-times"></i></div>
+        <div class="text"><h3>Belum Absen</h3><p id="statAlpa">0 Siswa</p></div>
+    </div>
+
+    <!-- Folder Presensi -->
+    <div class="folder-title">Presensi</div>
+    <div class="menu-card" onclick="loadPage('inputIzin')">
+        <div class="icon" style="background:#ff9800"><i class="fas fa-envelope"></i></div>
+        <div class="text"><h3>Input Izin/Sakit</h3><p>Catat siswa yang tidak masuk</p></div>
+    </div>
+
+    <!-- Folder Master Data -->
+    <div class="folder-title">Master Data</div>
+    <div class="menu-card" onclick="loadPage('dataSiswa')">
+        <div class="icon"><i class="fas fa-users"></i></div>
+        <div class="text"><h3>Data Siswa</h3><p>Kelola data 600 siswa & ID Telegram</p></div>
+    </div>
+    <div class="menu-card" onclick="loadPage('dataKelas')">
+        <div class="icon"><i class="fas fa-school"></i></div>
+        <div class="text"><h3>Data Kelas</h3><p>Daftar 12 kelas & guru piket</p></div>
+    </div>
+
+    <!-- Folder Data Absensi -->
+    <div class="folder-title">Data Absensi</div>
+    <div class="menu-card" onclick="loadPage('absenHariIni')">
+        <div class="icon"><i class="fas fa-calendar-day"></i></div>
+        <div class="text"><h3>Absensi Hari Ini</h3><p>Rekap real-time tap kartu</p></div>
+    </div>
+    <div class="menu-card" onclick="loadPage('absenRange')">
+        <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+        <div class="text"><h3>Absensi By Range</h3><p>Cari data per tanggal</p></div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="nav-item active" onclick="goHome()"><i class="fas fa-home"></i> Home</div>
+    <div class="nav-item" onclick="loadPage('dataSiswa')"><i class="fas fa-users"></i> Siswa</div>
+    <div class="nav-item" onclick="loadPage('absenHariIni')"><i class="fas fa-clock"></i> Absen</div>
+    <div class="nav-item" onclick="loadPage('setting')"><i class="fas fa-cog"></i> Setting</div>
+</div>
+
+<!-- Firebase JS SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-database-compat.js"></script>
+<script>
+// PASTE FIREBASE CONFIG ANDA DI SINI
+const firebaseConfig = {
+  apiKey: "AIzaSyB6UX6KIwVCCfArhcrVum2aIQyTHjMXfKU",
+  authDomain: "absensi-pelajar.firebaseapp.com",
+  databaseURL: "https://absensi-pelajar-default-rtdb.asia-southeast1.firebasedatabase.com", // Pastikan link ini benar sesuai database Anda
+  projectId: "absensi-pelajar",
+  storageBucket: "absensi-pelajar.firebasestorage.app",
+  messagingSenderId: "194969066694",
+  appId: "1:194969066694:web:2f351904c2c1642c7ccbc7",
+  measurementId: "G-8Y4KH2WXNW"
+};
+
+// Inisialisasi Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function goHome() {
+    location.reload();
+}
+
+function loadPage(page) {
+    const content = document.getElementById('mainContent');
+    const title = document.getElementById('pageTitle');
+    
+    if(page === 'dataSiswa') {
+        title.innerText = "Master Data Siswa";
+        content.innerHTML = `
+            <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <button class="btn" onclick="showFormSiswa()"><i class="fas fa-plus"></i> Tambah Siswa Baru</button>
+            <div id="formContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;">
+                <h3 style="margin-bottom:10px">Form Siswa</h3>
+                <input type="hidden" id="siswaKey">
+                <div class="form-group"><label>UID Kartu RFID</label><input id="siswaUid" placeholder="Contoh: 1A 2B 3C 4D"></div>
+                <div class="form-group"><label>Nama Siswa</label><input id="siswaNama" placeholder="Nama Lengkap"></div>
+                <div class="form-group"><label>Kelas</label><input id="siswaKelas" placeholder="Contoh: 7A"></div>
+                <div class="form-group"><label>ID Telegram Ortu</label><input id="siswaTelegram" placeholder="Contoh: 123456789"></div>
+                <button class="btn" onclick="saveSiswa()">Simpan Data</button>
+            </div>
+            <table id="tblSiswa">
+                <thead><tr><th>Nama</th><th>Kelas</th><th>Aksi</th></tr></thead>
+                <tbody id="bodySiswa"></tbody>
+            </table>
+        `;
+        loadSiswa();
+    } else if (page === 'absenHariIni') {
+        title.innerText = "Absensi Hari Ini";
+        content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button> <p>Memuat data...</p>`;
+        loadAbsenHariIni();
+    } else {
+        title.innerText = page;
+        content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button> <p>Halaman ${page} sedang dalam pengembangan...</p>`;
+    }
+}
+
+// --- FUNGSI MASTER DATA SISWA ---
+function showFormSiswa(data = null) {
+    document.getElementById('formContainer').style.display = 'block';
+    document.getElementById('siswaKey').value = data ? data.key : '';
+    document.getElementById('siswaUid').value = data ? data.val().uid : '';
+    document.getElementById('siswaNama').value = data ? data.val().nama : '';
+    document.getElementById('siswaKelas').value = data ? data.val().kelas : '';
+    document.getElementById('siswaTelegram').value = data ? data.val().id_telegram_ortu : '';
+}
+
+function saveSiswa() {
+    let key = document.getElementById('siswaKey').value;
+    let uid = document.getElementById('siswaUid').value;
+    let nama = document.getElementById('siswaNama').value;
+    let kelas = document.getElementById('siswaKelas').value;
+    let telegram = document.getElementById('siswaTelegram').value;
+
+    if(!uid || !nama) { alert("UID dan Nama wajib diisi!"); return; }
+
+    let data = { uid: uid, nama: nama, kelas: kelas, id_telegram_ortu: telegram };
+    
+    if(key) {
+        db.ref('master_data/siswa/' + key).update(data);
+    } else {
+        db.ref('master_data/siswa').push(data);
+    }
+    alert("Data siswa tersimpan!");
+    document.getElementById('formContainer').style.display = 'none';
+}
+
+function loadSiswa() {
+    db.ref('master_data/siswa').on('value', (snapshot) => {
+        let html = '';
+        snapshot.forEach((child) => {
+            let d = child.val();
+            html += `<tr>
+                <td>${d.nama}<br><small style="color:#999">${d.uid}</small></td>
+                <td>${d.kelas}</td>
+                <td>
+                    <button class="btn-action btn-edit" onclick="showFormSiswa({key:'${child.key}', val:()=>(${JSON.stringify(d)})})">Edit</button>
+                </td>
+            </tr>`;
+        });
+        document.getElementById('bodySiswa').innerHTML = html;
+    });
+}
+
+// --- FUNGSI CEK ABSEN HARI INI ---
+function loadAbsenHariIni() {
+    let today = new Date();
+    let dateString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    
+    db.ref('absensi/' + dateString).on('value', (snapshot) => {
+        let html = `<table><thead><tr><th>Nama</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody>`;
+        if(snapshot.exists()) {
+            snapshot.forEach((child) => {
+                let d = child.val();
+                html += `<tr><td>${d.nama}</td><td>${d.masuk || '-'}</td><td>${d.keluar || '-'}</td></tr>`;
+            });
+        } else {
+            html += `<tr><td colspan="3" style="text-align:center">Belum ada yang absen hari ini</td></tr>`;
+        }
+        html += `</tbody></table>`;
+        document.getElementById('mainContent').innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>` + html;
+    });
+}
+</script>
+</body>
+</html>
