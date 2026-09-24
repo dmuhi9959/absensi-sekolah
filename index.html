@@ -103,7 +103,7 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 const firebaseConfig = {
   apiKey: "AIzaSyB6UX6KIwVCCfArhcrVum2aIQyTHjMXfKU",
   authDomain: "absensi-pelajar.firebaseapp.com",
-  databaseURL: "https://absensi-pelajar-default-rtdb.asia-southeast1.firebasedatabase.com", // Pastikan link ini benar sesuai database Anda
+  databaseURL: "https://absensi-pelajar-default-rtdb.asia-southeast1.firebasedatabase.com",
   projectId: "absensi-pelajar",
   storageBucket: "absensi-pelajar.firebasestorage.app",
   messagingSenderId: "194969066694",
@@ -131,7 +131,7 @@ function loadPage(page) {
             <div id="formContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;">
                 <h3 style="margin-bottom:10px">Form Siswa</h3>
                 <input type="hidden" id="siswaKey">
-                <div class="form-group"><label>UID Kartu RFID</label><input id="siswaUid" placeholder="Contoh: 1A 2B 3C 4D"></div>
+                <div class="form-group"><label>UID Kartu RFID</label><input id="siswaUid" placeholder="Contoh: A1B2C3D4 (HURUF BESAR)"></div>
                 <div class="form-group"><label>Nama Siswa</label><input id="siswaNama" placeholder="Nama Lengkap"></div>
                 <div class="form-group"><label>Kelas</label><input id="siswaKelas" placeholder="Contoh: 7A"></div>
                 <div class="form-group"><label>ID Telegram Ortu</label><input id="siswaTelegram" placeholder="Contoh: 123456789"></div>
@@ -177,7 +177,8 @@ function saveSiswa() {
     if(key) {
         db.ref('master_data/siswa/' + key).update(data);
     } else {
-        db.ref('master_data/siswa').push(data);
+        // PERBAIKAN: Menggunakan UID sebagai Key Utama agar ESP32 mudah menemukannya
+        db.ref('master_data/siswa/' + uid).set(data);
     }
     alert("Data siswa tersimpan!");
     document.getElementById('formContainer').style.display = 'none';
