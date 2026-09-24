@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Jendela Sekolah - Admin</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
@@ -11,7 +11,6 @@ body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflo
 .header{background:#1a8a6f;color:#fff;padding:15px;text-align:center;font-weight:bold;font-size:1.1rem;box-shadow:0 2px 5px rgba(0,0,0,0.2);position:sticky;top:0;z-index:100}
 .content{flex:1;overflow-y:auto;padding:15px;padding-bottom:70px}
 
-/* Dashboard Grid */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
 .dash-card{background:#fff;border-radius:12px;padding:15px;box-shadow:0 2px 8px rgba(0,0,0,0.05);text-align:center;cursor:pointer;transition:0.2s}
 .dash-card:hover{background:#f9f9f9}
@@ -26,14 +25,12 @@ body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflo
 
 .folder-title{color:#555;font-size:0.85rem;margin:20px 0 10px;font-weight:bold;text-transform:uppercase;border-left:4px solid #1a8a6f;padding-left:10px}
 
-/* Form & Table */
 .form-group{margin-bottom:15px}
 .form-group label{display:block;font-size:0.8rem;color:#555;margin-bottom:5px;font-weight:600}
 .form-group input, .form-group select, .form-group textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:1rem;font-family:inherit;background:#fff}
 .btn{width:100%;padding:14px;background:#1a8a6f;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer;margin-top:10px}
 .btn-blue{background:#2196f3}
 .btn-danger{background:#f44336}
-.btn-sm{padding:8px 12px;font-size:0.8rem;width:auto}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
 th{background:#1a8a6f;color:#fff;padding:12px;text-align:left;font-size:0.8rem}
 td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
@@ -42,11 +39,9 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 .btn-del{background:#f44336}
 .back-btn{background:transparent;color:#1a8a6f;border:none;font-size:1rem;cursor:pointer;margin-bottom:15px;font-weight:bold;display:flex;align-items:center;gap:5px}
 
-/* Profil Photo */
 .profile-photo{width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;vertical-align:middle;background:#ddd}
 .photo-preview{width:80px;height:80px;border-radius:50%;object-fit:cover;margin-top:10px;display:none;background:#ddd;border:2px solid #1a8a6f}
 
-/* Bottom Navigation */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
 .nav-item{display:flex;flex-direction:column;align-items:center;color:#888;cursor:pointer;font-size:0.7rem;gap:4px}
 .nav-item.active{color:#1a8a6f}
@@ -148,6 +143,7 @@ function loadPage(page) {
                     <input type="file" id="siswaPhoto" accept="image/*" onchange="handlePhotoUpload(event)" style="margin-top:10px;">
                 </div>
                 <div class="form-group"><label>UID Kartu RFID</label><input id="siswaUid" placeholder="Contoh: A1B2C3D4"></div>
+                <div class="form-group"><label>NIS (Nomor Induk Siswa)</label><input id="siswaNis" placeholder="Contoh: 12345"></div>
                 <div class="form-group"><label>Nama Siswa</label><input id="siswaNama" placeholder="Nama Lengkap"></div>
                 <div class="form-group"><label>Kelas</label><select id="siswaKelas"><option value="">Loading...</option></select></div>
                 <div class="form-group"><label>ID Telegram Ortu</label><input id="siswaTelegram" placeholder="Contoh: 123456789"></div>
@@ -209,7 +205,6 @@ function loadPage(page) {
         `;
         loadKelasDropdown('izinKelas');
     }
-    // --- MENU BARU ---
     else if(page === 'inputNilai') {
         title.innerText = "Input Nilai Siswa";
         content.innerHTML = `
@@ -280,7 +275,6 @@ function loadPage(page) {
     }
 }
 
-// --- FUNGSI HANDLE PHOTO ---
 function handlePhotoUpload(event) {
     const file = event.target.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -296,7 +290,6 @@ function handlePhotoUpload(event) {
     }; reader.readAsDataURL(file);
 }
 
-// --- FUNGSI GLOBAL KELAS ---
 function loadKelasDropdown(selectId) {
     db.ref('master_data/kelas').on('value', (snapshot) => {
         let html = '<option value="">-- Pilih Kelas --</option>';
@@ -305,11 +298,11 @@ function loadKelasDropdown(selectId) {
     });
 }
 
-// --- FUNGSI SISWA ---
 function showFormSiswa(data = null) {
     document.getElementById('formContainer').style.display = 'block'; photoBase64 = "";
     document.getElementById('siswaKey').value = data ? data.key : '';
     document.getElementById('siswaUid').value = data ? data.val().uid : '';
+    document.getElementById('siswaNis').value = data ? data.val().nis : '';
     document.getElementById('siswaNama').value = data ? data.val().nama : '';
     document.getElementById('siswaKelas').value = data ? data.val().kelas : '';
     document.getElementById('siswaTelegram').value = data ? data.val().id_telegram_ortu : '';
@@ -318,9 +311,14 @@ function showFormSiswa(data = null) {
     else { p.style.display = 'none'; p.src = ""; }
 }
 function saveSiswa() {
-    let k = document.getElementById('siswaKey').value, uid = document.getElementById('siswaUid').value, nama = document.getElementById('siswaNama').value, kelas = document.getElementById('siswaKelas').value, tg = document.getElementById('siswaTelegram').value;
+    let k = document.getElementById('siswaKey').value, 
+    uid = document.getElementById('siswaUid').value, 
+    nis = document.getElementById('siswaNis').value, 
+    nama = document.getElementById('siswaNama').value, 
+    kelas = document.getElementById('siswaKelas').value, 
+    tg = document.getElementById('siswaTelegram').value;
     if(!uid || !nama || !kelas) return alert("UID, Nama, Kelas wajib diisi!");
-    let data = { uid, nama, kelas, id_telegram_ortu: tg, photo: photoBase64 };
+    let data = { uid, nis, nama, kelas, id_telegram_ortu: tg, photo: photoBase64 };
     if(k) db.ref('master_data/siswa/' + k).update(data); else db.ref('master_data/siswa/' + uid).set(data);
     alert("Tersimpan!"); document.getElementById('formContainer').style.display = 'none';
 }
@@ -329,12 +327,11 @@ function loadSiswa() {
     db.ref('master_data/siswa').on('value', (snap) => {
         let h = ''; if(!snap.exists()) h = '<tr><td colspan="3" style="text-align:center">Kosong</td></tr>';
         snap.forEach((c) => { let d=c.val(); let p = d.photo?`<img src="${d.photo}" class="profile-photo">`:`<i class="fas fa-user-circle profile-photo" style="font-size:40px;color:#ccc"></i>`;
-            h += `<tr><td>${p} ${d.nama}<br><small style="color:#999">${d.uid}</small></td><td>${d.kelas}</td><td><button class="btn-action btn-edit" onclick="showFormSiswa({key:'${c.key}',val:()=>(${JSON.stringify(d)})})">Edit</button><button class="btn-action btn-del" onclick="deleteSiswa('${c.key}')">Hapus</button></td></tr>`; });
+            h += `<tr><td>${p} ${d.nama}<br><small style="color:#999">NIS: ${d.nis||'-'}</small></td><td>${d.kelas}</td><td><button class="btn-action btn-edit" onclick="showFormSiswa({key:'${c.key}',val:()=>(${JSON.stringify(d)})})">Edit</button><button class="btn-action btn-del" onclick="deleteSiswa('${c.key}')">Hapus</button></td></tr>`; });
         document.getElementById('bodySiswa').innerHTML = h;
     });
 }
 
-// --- FUNGSI KELAS ---
 function showFormKelas() { document.getElementById('formKelasContainer').style.display='block'; document.getElementById('kelasId').value=''; document.getElementById('kelasGuru').value=''; }
 function saveKelas() { let n=document.getElementById('kelasId').value, g=document.getElementById('kelasGuru').value; if(!n) return alert("Nama kelas wajib!"); db.ref('master_data/kelas/'+n).set({nama_kelas:n, guru_piket:g}); alert("Tersimpan!"); document.getElementById('formKelasContainer').style.display='none'; }
 function deleteKelas(id) { if(confirm("Hapus kelas?")) db.ref('master_data/kelas/'+id).remove(); }
@@ -346,27 +343,23 @@ function loadKelas() {
     });
 }
 
-// --- FUNGSI IZIN ---
 function loadSiswaForIzin(k) { let s=document.getElementById('izinSiswa'); if(!k) { s.innerHTML='<option value="">-- Pilih Kelas --</option>'; s.disabled=true; return; } s.disabled=false; s.innerHTML='<option value="">Loading...</option>';
     db.ref('master_data/siswa').orderByChild('kelas').equalTo(k).once('value').then((snap)=>{ let h='<option value="">-- Pilih Siswa --</option>';
         snap.forEach((c)=>{ let d=c.val(); h+=`<option value="${c.key}">${d.nama}</option>`; }); s.innerHTML=h; });
 }
 function simpanIzin() { let u=document.getElementById('izinSiswa').value, s=document.getElementById('izinStatus').value; if(!u) return alert("Pilih Siswa!"); let t=new Date(); let d=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); db.ref('absensi/'+d+'/'+u).update({status:s}); alert("Izin dicatat!"); }
 
-// --- FUNGSI NILAI ---
 function loadSiswaForNilai(k) { let s=document.getElementById('nilaiSiswa'); if(!k) { s.innerHTML='<option value="">-- Pilih Kelas --</option>'; s.disabled=true; return; } s.disabled=false; s.innerHTML='<option value="">Loading...</option>';
     db.ref('master_data/siswa').orderByChild('kelas').equalTo(k).once('value').then((snap)=>{ let h='<option value="">-- Pilih Siswa --</option>';
         snap.forEach((c)=>{ let d=c.val(); h+=`<option value="${c.key}">${d.nama}</option>`; }); s.innerHTML=h; });
 }
 function simpanNilai() { let u=document.getElementById('nilaiSiswa').value, t=document.getElementById('nilaiTipe').value, m=document.getElementById('nilaiMapel').value, n=document.getElementById('nilaiAngka').value; if(!u||!m||!n) return alert("Lengkapi data!"); db.ref('nilai/'+u+'/'+t+'/'+m).set(n); alert("Nilai tersimpan!"); document.getElementById('nilaiMapel').value=''; document.getElementById('nilaiAngka').value=''; }
 
-// --- FUNGSI JADWAL ---
 function simpanJadwal() { let k=document.getElementById('jadwalKelas').value, h=document.getElementById('jadwalHari').value, j=document.getElementById('jadwalJam').value, m=document.getElementById('jadwalMapel').value; if(!k||!j||!m) return alert("Lengkapi data!"); let newRef=db.ref('jadwal/'+k+'/'+h).push(); newRef.set({jam:j, mapel:m}); alert("Jadwal tersimpan!"); document.getElementById('jadwalJam').value=''; document.getElementById('jadwalMapel').value=''; loadJadwalList(k); }
 function loadJadwalList(k) { if(!k) return; let list=document.getElementById('listJadwal'); list.innerHTML='Memuat...';
     db.ref('jadwal/'+k).on('value', (snap)=>{ let h=''; if(snap.exists()) { snap.forEach((hariC)=>{ h+=`<strong>${hariC.key}</strong><ul style="padding-left:20px;font-size:0.85rem;">`; hariC.forEach((jC)=>{ let j=jC.val(); h+=`<li>${j.jam} - ${j.mapel}</li>`; }); h+=`</ul>`; }); } else { h='Belum ada jadwal'; } list.innerHTML=h; });
 }
 
-// --- FUNGSI TABUNGAN ---
 function loadSiswaForTab(k) { let s=document.getElementById('tabSiswa'); if(!k) { s.innerHTML='<option value="">-- Pilih Kelas --</option>'; s.disabled=true; return; } s.disabled=false; s.innerHTML='<option value="">Loading...</option>';
     db.ref('master_data/siswa').orderByChild('kelas').equalTo(k).once('value').then((snap)=>{ let h='<option value="">-- Pilih Siswa --</option>'; snap.forEach((c)=>{ let d=c.val(); h+=`<option value="${c.key}">${d.nama}</option>`; }); s.innerHTML=h; });
 }
@@ -377,12 +370,10 @@ function loadRiwayatTab(u) { if(!u) return; let d=document.getElementById('riway
     db.ref('tabungan/'+u).on('value', (snap)=>{ let h=''; if(snap.exists()) { let data=snap.val(); h+=`<p style="font-size:1.2rem;font-weight:bold;color:#1a8a6f;text-align:right;">Rp ${data.saldo||0}</p>`; h+=`<table><thead><tr><th>Tgl</th><th>Jenis</th><th>Jml</th></tr></thead><tbody>`; if(data.riwayat) { Object.keys(data.riwayat).reverse().forEach(k=>{ let r=data.riwayat[k]; h+=`<tr><td>${r.tanggal}</td><td>${r.jenis}</td><td>${r.jumlah}</td></tr>`; }); } h+=`</tbody></table>`; } else { h='Belum ada riwayat'; } d.innerHTML=h; });
 }
 
-// --- FUNGSI INFO ---
 function simpanInfo() { let j=document.getElementById('infoJudul').value, i=document.getElementById('infoIsi').value; if(!j||!i) return alert("Lengkapi info!"); let t=new Date(); let ds=t.getDate()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear(); db.ref('info').push({tanggal:ds, judul:j, isi:i}); alert("Info dibagikan!"); document.getElementById('infoJudul').value=''; document.getElementById('infoIsi').value=''; loadInfoList(); }
 function loadInfoList() { let l=document.getElementById('listInfo'); db.ref('info').limitToLast(5).on('value', (snap)=>{ let h=''; if(snap.exists()) { snap.forEach((c)=>{ let d=c.val(); h+=`<div style="border-bottom:1px solid #eee;padding:10px 0;"><strong>${d.judul}</strong> <button class="btn-action btn-del" style="float:right;" onclick="db.ref('info/${c.key}').remove()">Hapus</button><br><small>${d.tanggal}</small><p style="margin-top:5px;font-size:0.85rem;">${d.isi}</p></div>`; }); } else { h='Belum ada info'; } l.innerHTML=h; });
 }
 
-// --- FUNGSI ABSEN ---
 let allAbsenData=[];
 function loadAbsenHariIni() { let t=new Date(); let d=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
     db.ref('absensi/'+d).on('value', (snap)=>{ allAbsenData=[]; snap.forEach((c)=>{ allAbsenData.push(c.val()); }); loadKelasDropdown('filterKelasAbsen'); renderAbsenHariIni(); });
@@ -391,14 +382,12 @@ function renderAbsenHariIni() { let f=document.getElementById('filterKelasAbsen'
     if(fil.length>0) { fil.forEach((d)=>{ h+=`<tr><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); } else { h+=`<tr><td colspan="5" style="text-align:center">Belum ada data</td></tr>`; } h+=`</tbody></table>`; document.getElementById('tabelAbsenHariIni').innerHTML=h;
 }
 
-// --- FUNGSI EXPORT ---
 function cariRange() { let m=document.getElementById('tglMulai').value, a=document.getElementById('tglAkhir').value; document.getElementById('hasilRange').innerHTML='<p>Memuat...</p>';
     db.ref('absensi').orderByKey().startAt(m).endAt(a).once('value').then((snap)=>{ let h=`<button class="btn btn-blue" onclick="exportExcel()" style="margin-bottom:10px;"><i class="fas fa-file-excel"></i> Export Excel</button><table id="tabelRange"><thead><tr><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody>`;
         if(snap.exists()) { snap.forEach((dC)=>{ dC.forEach((c)=>{ let d=c.val(); h+=`<tr><td>${dC.key}</td><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); }); } else { h+='<tr><td colspan="6" style="text-align:center">Kosong</td></tr>'; } h+='</tbody></table>'; document.getElementById('hasilRange').innerHTML=h; });
 }
 function exportExcel() { let t=document.getElementById('tabelRange'); if(!t) return alert("Kosong!"); let h=t.outerHTML; let b=new Blob(['\ufeff',h],{type:'application/vnd.ms-excel'}); let u=URL.createObjectURL(b); let a=document.createElement('a'); a.href=u; a.download='Rekap_Absensi.xls'; a.click(); }
 
-// INIT
 loadDashboard();
 </script>
 </body>
