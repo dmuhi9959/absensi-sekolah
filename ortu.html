@@ -3,42 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Aplikasi Orang Tua - Absensi Siswa</title>
+<title>Jendela Sekolah - Orang Tua</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
 body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
 .header{background:#1a8a6f;color:#fff;padding:15px;text-align:center;font-weight:bold;font-size:1.1rem;position:sticky;top:0;z-index:100}
-.content{flex:1;overflow-y:auto;padding:20px}
+.content{flex:1;overflow-y:auto;padding:15px;padding-bottom:70px}
 .login-box{background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-top:20px}
 .form-group{margin-bottom:15px}
 .form-group label{display:block;font-size:0.8rem;color:#555;margin-bottom:5px;font-weight:600}
 .form-group input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:1rem}
 .btn{width:100%;padding:14px;background:#1a8a6f;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer;margin-top:10px}
 .btn-logout{background:#f44336;margin-top:20px}
+
 .profile-card{background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);text-align:center;margin-bottom:20px}
 .profile-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 10px;display:block;border:3px solid #1a8a6f}
 .profile-name{font-size:1.2rem;font-weight:bold;color:#333}
 .profile-class{font-size:0.9rem;color:#666}
-table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
-th{background:#1a8a6f;color:#fff;padding:12px;text-align:left;font-size:0.8rem}
-td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333;text-align:left}
+
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.menu-box{background:#fff;padding:15px;border-radius:10px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,0.05);cursor:pointer}
+.menu-box i{font-size:1.5rem;color:#1a8a6f;margin-bottom:5px}
+.menu-box span{display:block;font-size:0.8rem;font-weight:bold;color:#333}
+
+.card{background:#fff;padding:15px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:15px}
+.card h3{margin-bottom:10px;color:#1a8a6f;font-size:1rem;border-bottom:2px solid #f0f0f0;padding-bottom:5px}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+th{background:#f0f2f5;padding:8px;text-align:left}
+td{padding:8px;border-bottom:1px solid #eee}
+.text-center{text-align:center}
+.text-right{text-align:right;font-weight:bold;color:#1a8a6f;font-size:1.1rem}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:8px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
+.nav-item{display:flex;flex-direction:column;align-items:center;color:#888;cursor:pointer;font-size:0.65rem;gap:2px}
+.nav-item.active{color:#1a8a6f}
+.nav-item i{font-size:1.1rem}
+.footer-text{text-align:center;font-size:0.75rem;color:#888;padding:20px;margin-top:auto}
 </style>
 </head>
 <body>
 
-<div class="header">Absensi Siswa (Orang Tua)</div>
+<div class="header">Jendela Sekolah</div>
 
 <div class="content" id="mainContent">
-    <div class="login-box">
+    <!-- Halaman Login -->
+    <div class="login-box" id="loginPage">
         <h3 style="text-align:center;margin-bottom:15px;">Login Orang Tua</h3>
         <div class="form-group">
             <label>Masukkan ID Kartu Siswa (UID)</label>
             <input id="loginUid" placeholder="Contoh: D5DF3903">
         </div>
-        <button class="btn" onclick="loginOrtu()">Lihat Absensi</button>
-        <p style="font-size:0.75rem;color:#888;text-align:center;margin-top:15px;">ID Kartu dapat dilihat di bagian belakang kartu RFID atau bertanya ke admin sekolah.</p>
+        <button class="btn" onclick="loginOrtu()">Masuk</button>
+        <p style="font-size:0.75rem;color:#888;text-align:center;margin-top:15px;">ID Kartu dapat dilihat di bagian belakang kartu RFID atau bertanya ke wali kelas.</p>
     </div>
+</div>
+
+<div class="bottom-nav" id="bottomNav" style="display:none;">
+    <div class="nav-item active" onclick="showPage('beranda')"><i class="fas fa-home"></i> Beranda</div>
+    <div class="nav-item" onclick="showPage('info')"><i class="fas fa-bullhorn"></i> Info</div>
+    <div class="nav-item" onclick="showPage('uang')"><i class="fas fa-wallet"></i> Uang</div>
+    <div class="nav-item" onclick="showPage('akademik')"><i class="fas fa-book"></i> Nilai</div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
@@ -56,6 +81,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+let currentUid = "";
 
 function loginOrtu() {
     let uid = document.getElementById('loginUid').value.toUpperCase().trim();
@@ -63,62 +89,137 @@ function loginOrtu() {
     
     db.ref('master_data/siswa/' + uid).once('value').then((snapshot) => {
         if(snapshot.exists()) {
+            currentUid = uid;
             let d = snapshot.val();
-            showAbsensi(uid, d);
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('bottomNav').style.display = 'flex';
+            showPage('beranda', d);
         } else {
-            alert("ID Kartu tidak ditemukan! Periksa kembali penulisan ID.");
+            alert("ID Kartu tidak ditemukan!");
         }
     });
 }
 
-function showAbsensi(uid, siswaData) {
-    let html = `
-        <div class="profile-card">
-            ${siswaData.photo ? `<img src="${siswaData.photo}" class="profile-photo">` : `<i class="fas fa-user-circle" style="font-size:80px;color:#ccc;"></i>`}
-            <div class="profile-name">${siswaData.nama}</div>
-            <div class="profile-class">Kelas: ${siswaData.kelas}</div>
-        </div>
-        
-        <h3 style="margin-bottom:10px;color:#333;">Riwayat Absensi (7 Hari Terakhir)</h3>
-        <table>
-            <thead><tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead>
-            <tbody id="bodyRiwayat">
-                <tr><td colspan="4" style="text-align:center">Memuat...</td></tr>
-            </tbody>
-        </table>
-        
-        <button class="btn btn-logout" onclick="location.reload()"><i class="fas fa-sign-out-alt"></i> Keluar</button>
-    `;
-    document.getElementById('mainContent').innerHTML = html;
+function showPage(page, siswaData = null) {
+    let data = siswaData || window.cachedSiswa;
+    window.cachedSiswa = data;
+    let content = document.getElementById('mainContent');
+    let html = '';
     
-    // Ambil data 7 hari terakhir
+    if(page === 'beranda') {
+        html += `
+        <div class="profile-card">
+            ${data.photo ? `<img src="${data.photo}" class="profile-photo">` : `<i class="fas fa-user-circle" style="font-size:80px;color:#ccc;"></i>`}
+            <div class="profile-name">${data.nama}</div>
+            <div class="profile-class">Kelas: ${data.kelas}</div>
+        </div>
+        <div class="menu-grid">
+            <div class="menu-box" onclick="showPage('info')"><i class="fas fa-bullhorn"></i><span>Info Sekolah</span></div>
+            <div class="menu-box" onclick="showPage('uang')"><i class="fas fa-wallet"></i><span>Tabungan</span></div>
+            <div class="menu-box" onclick="showPage('akademik')"><i class="fas fa-book"></i><span>Nilai & Jadwal</span></div>
+        </div>
+        <div class="card">
+            <h3>Absensi 7 Hari Terakhir</h3>
+            <table><thead><tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="bodyRiwayat"><tr><td colspan="3" class="text-center">Memuat...</td></tr></tbody></table>
+        </div>`;
+        loadRiwayatAbsen();
+    } 
+    else if(page === 'info') {
+        html += `<div class="card"><h3>Informasi Sekolah</h3><div id="bodyInfo">Memuat...</div></div>`;
+        loadInfo();
+    }
+    else if(page === 'uang') {
+        html += `<div class="card"><h3>Tabungan Siswa</h3><div id="bodyUang">Memuat...</div></div>`;
+        loadUang();
+    }
+    else if(page === 'akademik') {
+        html += `
+        <div class="card"><h3>Jadwal Pelajaran</h3><div id="bodyJadwal">Memuat...</div></div>
+        <div class="card"><h3>Nilai Harian</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyHarian"></tbody></table></div>
+        <div class="card"><h3>Nilai Ujian</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyUjian"></tbody></table></div>
+        <div class="card"><h3>Nilai Rapot</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyRapot"></tbody></table></div>`;
+        loadAkademik(data.kelas);
+    }
+    
+    html += `<div class="footer-text">Jaringan Informasi Bersama Antar Sekolah</div><button class="btn btn-logout" onclick="location.reload()">Keluar</button>`;
+    content.innerHTML = html;
+}
+
+function loadRiwayatAbsen() {
     let today = new Date();
-    let dates = [];
+    let riwayatHtml = '';
+    let count = 0;
     for(let i=0; i<7; i++) {
         let d = new Date(today);
         d.setDate(d.getDate() - i);
         let dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        dates.push(dateStr);
-    }
-    
-    let riwayatHtml = '';
-    let count = 0;
-    
-    // Cek satu per satu tanggalnya
-    dates.forEach(dateStr => {
-        db.ref('absensi/' + dateStr + '/' + uid).once('value').then((snapshot) => {
+        db.ref('absensi/' + dateStr + '/' + currentUid).once('value').then((snap) => {
             count++;
-            let d = snapshot.val();
-            let tglFormat = dateStr.split('-').reverse().join('-'); // Ubah ke DD-MM-YYYY
-            if(d) {
-                riwayatHtml += `<tr><td>${tglFormat}</td><td>${d.masuk || '-'}</td><td>${d.keluar || '-'}</td><td>${d.status || 'Hadir'}</td></tr>`;
-            } else {
-                riwayatHtml += `<tr><td>${tglFormat}</td><td colspan="3" style="text-align:center;color:#999">Tidak ada catatan</td></tr>`;
-            }
-            
-            if(count === 7) {
-                document.getElementById('bodyRiwayat').innerHTML = riwayatHtml;
-            }
+            let absen = snap.val();
+            let tglFormat = dateStr.split('-').reverse().join('-');
+            if(absen) riwayatHtml += `<tr><td>${tglFormat}</td><td>${absen.masuk || '-'}</td><td>${absen.keluar || '-'}</td></tr>`;
+            else riwayatHtml += `<tr><td>${tglFormat}</td><td colspan="2" class="text-center">Tidak ada catatan</td></tr>`;
+            if(count === 7) document.getElementById('bodyRiwayat').innerHTML = riwayatHtml;
+        });
+    }
+}
+
+function loadInfo() {
+    db.ref('info').limitToLast(5).once('value').then((snapshot) => {
+        let html = '';
+        if(snapshot.exists()) {
+            snapshot.forEach((child) => {
+                let d = child.val();
+                html += `<div style="border-bottom:1px solid #eee;padding:10px 0;"><strong>${d.judul}</strong><br><small>${d.tanggal}</small><p style="margin-top:5px;font-size:0.85rem;">${d.isi}</p></div>`;
+            });
+        } else { html = '<p class="text-center">Belum ada info</p>'; }
+        document.getElementById('bodyInfo').innerHTML = html;
+    });
+}
+
+function loadUang() {
+    db.ref('tabungan/' + currentUid).once('value').then((snapshot) => {
+        let d = snapshot.val();
+        let html = `<p style="text-align:center;font-size:0.9rem;">Saldo Tabungan</p><h2 class="text-right">Rp ${d ? (d.saldo || 0).toLocaleString('id-ID') : '0'}</h2>`;
+        html += `<table style="margin-top:15px;"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jumlah</th></tr></thead><tbody>`;
+        if(d && d.riwayat) {
+            Object.keys(d.riwayat).reverse().forEach(k => {
+                let r = d.riwayat[k];
+                html += `<tr><td>${r.tanggal}</td><td>${r.jenis}</td><td>${r.jumlah}</td></tr>`;
+            });
+        } else {
+            html += `<tr><td colspan="3" class="text-center">Belum ada riwayat</td></tr>`;
+        }
+        html += `</tbody></table>`;
+        document.getElementById('bodyUang').innerHTML = html;
+    });
+}
+
+function loadAkademik(kelas) {
+    db.ref('jadwal/' + kelas).once('value').then((snap) => {
+        let html = '';
+        if(snap.exists()) {
+            snap.forEach((hariChild) => {
+                html += `<strong>${hariChild.key}</strong><ul style="padding-left:20px;font-size:0.85rem;">`;
+                hariChild.forEach((jamChild) => {
+                    let j = jamChild.val();
+                    html += `<li>${j.jam} - ${j.mapel}</li>`;
+                });
+                html += `</ul>`;
+            });
+        } else { html = '<p class="text-center">Belum ada jadwal</p>'; }
+        document.getElementById('bodyJadwal').innerHTML = html;
+    });
+
+    ['harian', 'ujian', 'rapot'].forEach(tipe => {
+        db.ref('nilai/' + currentUid + '/' + tipe).once('value').then((snap) => {
+            let html = '';
+            if(snap.exists()) {
+                snap.forEach((child) => {
+                    html += `<tr><td>${child.key}</td><td>${child.val()}</td></tr>`;
+                });
+            } else { html = `<tr><td colspan="2" class="text-center">Belum ada nilai</td></tr>`; }
+            document.getElementById('body' + tipe.charAt(0).toUpperCase() + tipe.slice(1)).innerHTML = html;
         });
     });
 }
