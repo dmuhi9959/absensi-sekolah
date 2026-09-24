@@ -32,7 +32,7 @@ body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflo
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
 th{background:#1a8a6f;color:#fff;padding:12px;text-align:left;font-size:0.8rem}
 td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
-.btn-action{padding:5px 10px;border:none;border-radius:5px;cursor:pointer;color:#fff;font-size:0.75rem}
+.btn-action{padding:5px 10px;border:none;border-radius:5px;cursor:pointer;color:#fff;font-size:0.75rem;margin-right:5px}
 .btn-edit{background:#ffc107;color:#000}
 .btn-del{background:#f44336}
 .back-btn{background:transparent;color:#1a8a6f;border:none;font-size:1rem;cursor:pointer;margin-bottom:15px;font-weight:bold;display:flex;align-items:center;gap:5px}
@@ -99,24 +99,21 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-database-compat.js"></script>
 <script>
-// FIREBASE CONFIG (SUDAH DIPERBAIKI SESUAI PROJECT ANDA)
 const firebaseConfig = {
   apiKey: "AIzaSyB6UX6KIwVCCfArhcrVum2aIQyTHjMXfKU",
-  authDomain: "absensi-sekolah-satu.firebaseapp.com",
-  databaseURL: "https://absensi-sekolah-satu-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "absensi-sekolah-satu",
-  storageBucket: "absensi-sekolah-satu.firebasestorage.app",
+  authDomain: "absensi-pelajar.firebaseapp.com",
+  databaseURL: "https://absensi-pelajar-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "absensi-pelajar",
+  storageBucket: "absensi-pelajar.firebasestorage.app",
   messagingSenderId: "194969066694",
-  appId: "1:194969066694:web:2f351904c2c1642c7ccbc7"
+  appId: "1:194969066694:web:2f351904c2c1642c7ccbc7",
+  measurementId: "G-8Y4KH2WXNW"
 };
 
-// Inisialisasi Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-function goHome() {
-    location.reload();
-}
+function goHome() { location.reload(); }
 
 function loadPage(page) {
     const content = document.getElementById('mainContent');
@@ -142,13 +139,63 @@ function loadPage(page) {
             </table>
         `;
         loadSiswa();
-    } else if (page === 'absenHariIni') {
+    } 
+    else if(page === 'dataKelas') {
+        title.innerText = "Master Data Kelas";
+        content.innerHTML = `
+            <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <button class="btn" onclick="showFormKelas()"><i class="fas fa-plus"></i> Tambah Kelas</button>
+            <div id="formKelasContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;">
+                <h3 style="margin-bottom:10px">Form Kelas</h3>
+                <div class="form-group"><label>ID Kelas (Contoh: KLS_7A)</label><input id="kelasId" placeholder="KLS_7A"></div>
+                <div class="form-group"><label>Nama Kelas</label><input id="kelasNama" placeholder="Kelas 7A"></div>
+                <div class="form-group"><label>Guru Piket / Wali Kelas</label><input id="kelasGuru" placeholder="Nama Guru"></div>
+                <button class="btn" onclick="saveKelas()">Simpan Kelas</button>
+            </div>
+            <table>
+                <thead><tr><th>Nama Kelas</th><th>Guru</th><th>Aksi</th></tr></thead>
+                <tbody id="bodyKelas"></tbody>
+            </table>
+        `;
+        loadKelas();
+    } 
+    else if(page === 'absenHariIni') {
         title.innerText = "Absensi Hari Ini";
         content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button> <p>Memuat data...</p>`;
         loadAbsenHariIni();
-    } else {
-        title.innerText = page;
-        content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button> <p>Halaman ${page} sedang dalam pengembangan...</p>`;
+    } 
+    else if(page === 'absenRange') {
+        title.innerText = "Absensi By Range";
+        content.innerHTML = `
+            <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <div class="form-group"><label>Dari Tanggal</label><input type="date" id="tglMulai"></div>
+            <div class="form-group"><label>Sampai Tanggal</label><input type="date" id="tglAkhir"></div>
+            <button class="btn" onclick="cariRange()">Cari Data</button>
+            <div id="hasilRange" style="margin-top:15px;"></div>
+        `;
+    } 
+    else if(page === 'inputIzin') {
+        title.innerText = "Input Izin/Sakit";
+        content.innerHTML = `
+            <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <div style="background:#fff; padding:15px; border-radius:8px;">
+                <div class="form-group"><label>Pilih Siswa</label><select id="izinSiswa"><option value="">Loading...</option></select></div>
+                <div class="form-group"><label>Status</label><select id="izinStatus"><option value="Izin">Izin</option><option value="Sakit">Sakit</option></select></div>
+                <button class="btn" onclick="simpanIzin()">Simpan Izin/Sakit</button>
+            </div>
+        `;
+        loadSiswaForIzin();
+    } 
+    else if(page === 'setting') {
+        title.innerText = "Pengaturan";
+        content.innerHTML = `
+            <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <div style="background:#fff; padding:15px; border-radius:8px; text-align:center;">
+                <i class="fas fa-cogs" style="font-size:2rem; color:#1a8a6f; margin-bottom:10px;"></i>
+                <h3>Panel Pengaturan</h3>
+                <p style="font-size:0.8rem; color:#666; margin-top:5px;">Hubungi Admin untuk pengaturan lebih lanjut.</p>
+            </div>
+        `;
     }
 }
 
@@ -182,9 +229,18 @@ function saveSiswa() {
     document.getElementById('formContainer').style.display = 'none';
 }
 
+function deleteSiswa(uid) {
+    if(confirm("Yakin ingin menghapus data siswa ini?")) {
+        db.ref('master_data/siswa/' + uid).remove();
+        alert("Data dihapus!");
+    }
+}
+
 function loadSiswa() {
     db.ref('master_data/siswa').on('value', (snapshot) => {
         let html = '';
+        if(!snapshot.exists()) html = '<tr><td colspan="3" style="text-align:center">Belum ada data</td></tr>';
+        
         snapshot.forEach((child) => {
             let d = child.val();
             html += `<tr>
@@ -192,6 +248,7 @@ function loadSiswa() {
                 <td>${d.kelas}</td>
                 <td>
                     <button class="btn-action btn-edit" onclick="showFormSiswa({key:'${child.key}', val:()=>(${JSON.stringify(d)})})">Edit</button>
+                    <button class="btn-action btn-del" onclick="deleteSiswa('${child.key}')">Hapus</button>
                 </td>
             </tr>`;
         });
@@ -199,23 +256,92 @@ function loadSiswa() {
     });
 }
 
-// --- FUNGSI CEK ABSEN HARI INI ---
+// --- FUNGSI MASTER DATA KELAS ---
+function showFormKelas() { document.getElementById('formKelasContainer').style.display = 'block'; document.getElementById('kelasId').value=''; document.getElementById('kelasNama').value=''; document.getElementById('kelasGuru').value=''; }
+function saveKelas() {
+    let id = document.getElementById('kelasId').value;
+    let nama = document.getElementById('kelasNama').value;
+    let guru = document.getElementById('kelasGuru').value;
+    if(!id || !nama) { alert("ID dan Nama Kelas wajib diisi!"); return; }
+    db.ref('master_data/kelas/' + id).set({ nama_kelas: nama, guru_piket: guru });
+    alert("Data kelas tersimpan!");
+    document.getElementById('formKelasContainer').style.display = 'none';
+}
+function deleteKelas(id) { if(confirm("Yakin hapus kelas ini?")) db.ref('master_data/kelas/' + id).remove(); }
+function loadKelas() {
+    db.ref('master_data/kelas').on('value', (snapshot) => {
+        let html = '';
+        if(!snapshot.exists()) html = '<tr><td colspan="3" style="text-align:center">Belum ada data</td></tr>';
+        snapshot.forEach((child) => {
+            let d = child.val();
+            html += `<tr><td>${d.nama_kelas}</td><td>${d.guru_piket}</td><td><button class="btn-action btn-del" onclick="deleteKelas('${child.key}')">Hapus</button></td></tr>`;
+        });
+        document.getElementById('bodyKelas').innerHTML = html;
+    });
+}
+
+// --- FUNGSI INPUT IZIN ---
+function loadSiswaForIzin() {
+    db.ref('master_data/siswa').once('value').then((snapshot) => {
+        let html = '<option value="">-- Pilih Siswa --</option>';
+        snapshot.forEach((child) => {
+            let d = child.val();
+            html += `<option value="${child.key}">${d.nama} (${d.kelas})</option>`;
+        });
+        document.getElementById('izinSiswa').innerHTML = html;
+    });
+}
+function simpanIzin() {
+    let uid = document.getElementById('izinSiswa').value;
+    let status = document.getElementById('izinStatus').value;
+    if(!uid) { alert("Pilih siswa dulu!"); return; }
+    
+    let today = new Date();
+    let dateString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    
+    db.ref('absensi/' + dateString + '/' + uid).update({ status: status });
+    alert("Izin/Sakit berhasil dicatat!");
+}
+
+// --- FUNGSI CEK ABSEN ---
 function loadAbsenHariIni() {
     let today = new Date();
     let dateString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     
     db.ref('absensi/' + dateString).on('value', (snapshot) => {
-        let html = `<table><thead><tr><th>Nama</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody>`;
+        let html = `<table><thead><tr><th>Nama</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody>`;
         if(snapshot.exists()) {
             snapshot.forEach((child) => {
                 let d = child.val();
-                html += `<tr><td>${d.nama}</td><td>${d.masuk || '-'}</td><td>${d.keluar || '-'}</td></tr>`;
+                html += `<tr><td>${d.nama}</td><td>${d.masuk || '-'}</td><td>${d.keluar || '-'}</td><td>${d.status || 'Hadir'}</td></tr>`;
             });
         } else {
-            html += `<tr><td colspan="3" style="text-align:center">Belum ada yang absen hari ini</td></tr>`;
+            html += `<tr><td colspan="4" style="text-align:center">Belum ada yang absen hari ini</td></tr>`;
         }
         html += `</tbody></table>`;
         document.getElementById('mainContent').innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>` + html;
+    });
+}
+
+function cariRange() {
+    let mulai = document.getElementById('tglMulai').value;
+    let akhir = document.getElementById('tglAkhir').value;
+    document.getElementById('hasilRange').innerHTML = '<p>Memuat data...</p>';
+    
+    db.ref('absensi').orderByKey().startAt(mulai).endAt(akhir).once('value').then((snapshot) => {
+        let html = '<table><thead><tr><th>Tanggal</th><th>Nama</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody>';
+        if(snapshot.exists()) {
+            snapshot.forEach((dateChild) => {
+                dateChild.forEach((child) => {
+                    let d = child.val();
+                    html += `<tr><td>${dateChild.key}</td><td>${d.nama}</td><td>${d.masuk || '-'}</td><td>${d.keluar || '-'}</td></tr>`;
+                });
+            });
+        } else {
+            html += '<tr><td colspan="4" style="text-align:center">Tidak ada data</td></tr>';
+        }
+        html += '</tbody></table>';
+        document.getElementById('hasilRange').innerHTML = html;
     });
 }
 </script>
