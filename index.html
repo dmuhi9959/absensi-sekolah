@@ -77,6 +77,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let photoBase64 = "";
+let siswaCache = {}; // Cache untuk menyimpan data siswa sementara
 
 function goHome() { location.reload(); }
 
@@ -298,18 +299,33 @@ function loadKelasDropdown(selectId) {
     });
 }
 
-function showFormSiswa(data = null) {
-    document.getElementById('formContainer').style.display = 'block'; photoBase64 = "";
-    document.getElementById('siswaKey').value = data ? data.key : '';
-    document.getElementById('siswaUid').value = data ? data.val().uid : '';
-    document.getElementById('siswaNis').value = data ? data.val().nis : '';
-    document.getElementById('siswaNama').value = data ? data.val().nama : '';
-    document.getElementById('siswaKelas').value = data ? data.val().kelas : '';
-    document.getElementById('siswaTelegram').value = data ? data.val().id_telegram_ortu : '';
+// --- FUNGSI SISWA (PERBAIKAN EDIT) ---
+function showFormSiswa(key = null) {
+    let data = null;
+    if(key) {
+        data = siswaCache[key]; // Ambil data dari cache
+    }
+    
+    document.getElementById('formContainer').style.display = 'block'; 
+    photoBase64 = "";
+    document.getElementById('siswaKey').value = key || '';
+    document.getElementById('siswaUid').value = data ? data.uid : '';
+    document.getElementById('siswaNis').value = data ? data.nis : '';
+    document.getElementById('siswaNama').value = data ? data.nama : '';
+    document.getElementById('siswaKelas').value = data ? data.kelas : '';
+    document.getElementById('siswaTelegram').value = data ? data.id_telegram_ortu : '';
+    
     let p = document.getElementById('photoPreview');
-    if(data && data.val().photo) { photoBase64 = data.val().photo; p.src = photoBase64; p.style.display = 'block'; }
-    else { p.style.display = 'none'; p.src = ""; }
+    if(data && data.photo) { 
+        photoBase64 = data.photo; 
+        p.src = photoBase64; 
+        p.style.display = 'block'; 
+    } else { 
+        p.style.display = 'none'; 
+        p.src = ""; 
+    }
 }
+
 function saveSiswa() {
     let k = document.getElementById('siswaKey').value, 
     uid = document.getElementById('siswaUid').value, 
@@ -322,16 +338,35 @@ function saveSiswa() {
     if(k) db.ref('master_data/siswa/' + k).update(data); else db.ref('master_data/siswa/' + uid).set(data);
     alert("Tersimpan!"); document.getElementById('formContainer').style.display = 'none';
 }
+
 function deleteSiswa(uid) { if(confirm("Hapus siswa ini?")) db.ref('master_data/siswa/' + uid).remove(); }
+
 function loadSiswa() {
     db.ref('master_data/siswa').on('value', (snap) => {
-        let h = ''; if(!snap.exists()) h = '<tr><td colspan="3" style="text-align:center">Kosong</td></tr>';
-        snap.forEach((c) => { let d=c.val(); let p = d.photo?`<img src="${d.photo}" class="profile-photo">`:`<i class="fas fa-user-circle profile-photo" style="font-size:40px;color:#ccc"></i>`;
-            h += `<tr><td>${p} ${d.nama}<br><small style="color:#999">NIS: ${d.nis||'-'}</small></td><td>${d.kelas}</td><td><button class="btn-action btn-edit" onclick="showFormSiswa({key:'${c.key}',val:()=>(${JSON.stringify(d)})})">Edit</button><button class="btn-action btn-del" onclick="deleteSiswa('${c.key}')">Hapus</button></td></tr>`; });
+        siswaCache = {}; // Bersihkan cache
+        let h = ''; 
+        if(!snap.exists()) h = '<tr><td colspan="3" style="text-align:center">Kosong</td></tr>';
+        
+        snap.forEach((c) => { 
+            let d = c.val(); 
+            siswaCache[c.key] = d; // Simpan ke cache
+            
+            let p = d.photo ? `<img src="${d.photo}" class="profile-photo">` : `<i class="fas fa-user-circle profile-photo" style="font-size:40px;color:#ccc"></i>`;
+            // Tombol edit sekarang hanya mengirim 'key' (UID), tidak mengirim data JSON lagi
+            h += `<tr>
+                <td>${p} ${d.nama}<br><small style="color:#999">NIS: ${d.nis||'-'}</small></td>
+                <td>${d.kelas}</td>
+                <td>
+                    <button class="btn-action btn-edit" onclick="showFormSiswa('${c.key}')">Edit</button>
+                    <button class="btn-action btn-del" onclick="deleteSiswa('${c.key}')">Hapus</button>
+                </td>
+            </tr>`; 
+        });
         document.getElementById('bodySiswa').innerHTML = h;
     });
 }
 
+// --- FUNGSI KELAS ---
 function showFormKelas() { document.getElementById('formKelasContainer').style.display='block'; document.getElementById('kelasId').value=''; document.getElementById('kelasGuru').value=''; }
 function saveKelas() { let n=document.getElementById('kelasId').value, g=document.getElementById('kelasGuru').value; if(!n) return alert("Nama kelas wajib!"); db.ref('master_data/kelas/'+n).set({nama_kelas:n, guru_piket:g}); alert("Tersimpan!"); document.getElementById('formKelasContainer').style.display='none'; }
 function deleteKelas(id) { if(confirm("Hapus kelas?")) db.ref('master_data/kelas/'+id).remove(); }
@@ -343,23 +378,27 @@ function loadKelas() {
     });
 }
 
+// --- FUNGSI IZIN ---
 function loadSiswaForIzin(k) { let s=document.getElementById('izinSiswa'); if(!k) { s.innerHTML='<option value="">-- Pilih Kelas --</option>'; s.disabled=true; return; } s.disabled=false; s.innerHTML='<option value="">Loading...</option>';
     db.ref('master_data/siswa').orderByChild('kelas').equalTo(k).once('value').then((snap)=>{ let h='<option value="">-- Pilih Siswa --</option>';
         snap.forEach((c)=>{ let d=c.val(); h+=`<option value="${c.key}">${d.nama}</option>`; }); s.innerHTML=h; });
 }
 function simpanIzin() { let u=document.getElementById('izinSiswa').value, s=document.getElementById('izinStatus').value; if(!u) return alert("Pilih Siswa!"); let t=new Date(); let d=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); db.ref('absensi/'+d+'/'+u).update({status:s}); alert("Izin dicatat!"); }
 
+// --- FUNGSI NILAI ---
 function loadSiswaForNilai(k) { let s=document.getElementById('nilaiSiswa'); if(!k) { s.innerHTML='<option value="">-- Pilih Kelas --</option>'; s.disabled=true; return; } s.disabled=false; s.innerHTML='<option value="">Loading...</option>';
     db.ref('master_data/siswa').orderByChild('kelas').equalTo(k).once('value').then((snap)=>{ let h='<option value="">-- Pilih Siswa --</option>';
         snap.forEach((c)=>{ let d=c.val(); h+=`<option value="${c.key}">${d.nama}</option>`; }); s.innerHTML=h; });
 }
 function simpanNilai() { let u=document.getElementById('nilaiSiswa').value, t=document.getElementById('nilaiTipe').value, m=document.getElementById('nilaiMapel').value, n=document.getElementById('nilaiAngka').value; if(!u||!m||!n) return alert("Lengkapi data!"); db.ref('nilai/'+u+'/'+t+'/'+m).set(n); alert("Nilai tersimpan!"); document.getElementById('nilaiMapel').value=''; document.getElementById('nilaiAngka').value=''; }
 
+// --- FUNGSI JADWAL ---
 function simpanJadwal() { let k=document.getElementById('jadwalKelas').value, h=document.getElementById('jadwalHari').value, j=document.getElementById('jadwalJam').value, m=document.getElementById('jadwalMapel').value; if(!k||!j||!m) return alert("Lengkapi data!"); let newRef=db.ref('jadwal/'+k+'/'+h).push(); newRef.set({jam:j, mapel:m}); alert("Jadwal tersimpan!"); document.getElementById('jadwalJam').value=''; document.getElementById('jadwalMapel').value=''; loadJadwalList(k); }
 function loadJadwalList(k) { if(!k) return; let list=document.getElementById('listJadwal'); list.innerHTML='Memuat...';
     db.ref('jadwal/'+k).on('value', (snap)=>{ let h=''; if(snap.exists()) { snap.forEach((hariC)=>{ h+=`<strong>${hariC.key}</strong><ul style="padding-left:20px;font-size:0.85rem;">`; hariC.forEach((jC)=>{ let j=jC.val(); h+=`<li>${j.jam} - ${j.mapel}</li>`; }); h+=`</ul>`; }); } else { h='Belum ada jadwal'; } list.innerHTML=h; });
 }
 
+// --- FUNGSI TABUNGAN ---
 function loadSiswaForTab(k) { let s=document.getElementById('tabSiswa'); if(!k) { s.innerHTML='<option value="">-- Pilih Kelas --</option>'; s.disabled=true; return; } s.disabled=false; s.innerHTML='<option value="">Loading...</option>';
     db.ref('master_data/siswa').orderByChild('kelas').equalTo(k).once('value').then((snap)=>{ let h='<option value="">-- Pilih Siswa --</option>'; snap.forEach((c)=>{ let d=c.val(); h+=`<option value="${c.key}">${d.nama}</option>`; }); s.innerHTML=h; });
 }
@@ -370,10 +409,12 @@ function loadRiwayatTab(u) { if(!u) return; let d=document.getElementById('riway
     db.ref('tabungan/'+u).on('value', (snap)=>{ let h=''; if(snap.exists()) { let data=snap.val(); h+=`<p style="font-size:1.2rem;font-weight:bold;color:#1a8a6f;text-align:right;">Rp ${data.saldo||0}</p>`; h+=`<table><thead><tr><th>Tgl</th><th>Jenis</th><th>Jml</th></tr></thead><tbody>`; if(data.riwayat) { Object.keys(data.riwayat).reverse().forEach(k=>{ let r=data.riwayat[k]; h+=`<tr><td>${r.tanggal}</td><td>${r.jenis}</td><td>${r.jumlah}</td></tr>`; }); } h+=`</tbody></table>`; } else { h='Belum ada riwayat'; } d.innerHTML=h; });
 }
 
+// --- FUNGSI INFO ---
 function simpanInfo() { let j=document.getElementById('infoJudul').value, i=document.getElementById('infoIsi').value; if(!j||!i) return alert("Lengkapi info!"); let t=new Date(); let ds=t.getDate()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear(); db.ref('info').push({tanggal:ds, judul:j, isi:i}); alert("Info dibagikan!"); document.getElementById('infoJudul').value=''; document.getElementById('infoIsi').value=''; loadInfoList(); }
 function loadInfoList() { let l=document.getElementById('listInfo'); db.ref('info').limitToLast(5).on('value', (snap)=>{ let h=''; if(snap.exists()) { snap.forEach((c)=>{ let d=c.val(); h+=`<div style="border-bottom:1px solid #eee;padding:10px 0;"><strong>${d.judul}</strong> <button class="btn-action btn-del" style="float:right;" onclick="db.ref('info/${c.key}').remove()">Hapus</button><br><small>${d.tanggal}</small><p style="margin-top:5px;font-size:0.85rem;">${d.isi}</p></div>`; }); } else { h='Belum ada info'; } l.innerHTML=h; });
 }
 
+// --- FUNGSI ABSEN HARI INI ---
 let allAbsenData=[];
 function loadAbsenHariIni() { let t=new Date(); let d=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
     db.ref('absensi/'+d).on('value', (snap)=>{ allAbsenData=[]; snap.forEach((c)=>{ allAbsenData.push(c.val()); }); loadKelasDropdown('filterKelasAbsen'); renderAbsenHariIni(); });
@@ -382,12 +423,14 @@ function renderAbsenHariIni() { let f=document.getElementById('filterKelasAbsen'
     if(fil.length>0) { fil.forEach((d)=>{ h+=`<tr><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); } else { h+=`<tr><td colspan="5" style="text-align:center">Belum ada data</td></tr>`; } h+=`</tbody></table>`; document.getElementById('tabelAbsenHariIni').innerHTML=h;
 }
 
+// --- FUNGSI EXPORT EXCEL ---
 function cariRange() { let m=document.getElementById('tglMulai').value, a=document.getElementById('tglAkhir').value; document.getElementById('hasilRange').innerHTML='<p>Memuat...</p>';
     db.ref('absensi').orderByKey().startAt(m).endAt(a).once('value').then((snap)=>{ let h=`<button class="btn btn-blue" onclick="exportExcel()" style="margin-bottom:10px;"><i class="fas fa-file-excel"></i> Export Excel</button><table id="tabelRange"><thead><tr><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody>`;
         if(snap.exists()) { snap.forEach((dC)=>{ dC.forEach((c)=>{ let d=c.val(); h+=`<tr><td>${dC.key}</td><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); }); } else { h+='<tr><td colspan="6" style="text-align:center">Kosong</td></tr>'; } h+='</tbody></table>'; document.getElementById('hasilRange').innerHTML=h; });
 }
 function exportExcel() { let t=document.getElementById('tabelRange'); if(!t) return alert("Kosong!"); let h=t.outerHTML; let b=new Blob(['\ufeff',h],{type:'application/vnd.ms-excel'}); let u=URL.createObjectURL(b); let a=document.createElement('a'); a.href=u; a.download='Rekap_Absensi.xls'; a.click(); }
 
+// JALANKAN APLIKASI
 loadDashboard();
 </script>
 </body>
