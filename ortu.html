@@ -2,13 +2,13 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Jendela Sekolah - Orang Tua</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
 body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
-.header{background:#1a8a6f;color:#fff;padding:15px;text-align:center;font-weight:bold;font-size:1.1rem;position:sticky;top:0;z-index:100}
+.header{background:#1a8a6f;color:#fff;padding:15px;text-align:center;font-weight:bold;font-size:1.1rem;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.2)}
 .content{flex:1;overflow-y:auto;padding:15px;padding-bottom:70px}
 .login-box{background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-top:20px}
 .form-group{margin-bottom:15px}
@@ -47,15 +47,14 @@ td{padding:8px;border-bottom:1px solid #eee}
 <div class="header">Jendela Sekolah</div>
 
 <div class="content" id="mainContent">
-    <!-- Halaman Login -->
     <div class="login-box" id="loginPage">
         <h3 style="text-align:center;margin-bottom:15px;">Login Orang Tua</h3>
         <div class="form-group">
-            <label>Masukkan ID Kartu Siswa (UID)</label>
-            <input id="loginUid" placeholder="Contoh: D5DF3903">
+            <label>Masukkan NIS Siswa</label>
+            <input id="loginNis" placeholder="Contoh: 12345">
         </div>
         <button class="btn" onclick="loginOrtu()">Masuk</button>
-        <p style="font-size:0.75rem;color:#888;text-align:center;margin-top:15px;">ID Kartu dapat dilihat di bagian belakang kartu RFID atau bertanya ke wali kelas.</p>
+        <p style="font-size:0.75rem;color:#888;text-align:center;margin-top:15px;">NIS dapat ditanyakan ke wali kelas masing-masing.</p>
     </div>
 </div>
 
@@ -84,18 +83,19 @@ const db = firebase.database();
 let currentUid = "";
 
 function loginOrtu() {
-    let uid = document.getElementById('loginUid').value.toUpperCase().trim();
-    if(!uid) { alert("Masukkan ID Kartu!"); return; }
+    let nis = document.getElementById('loginNis').value.trim();
+    if(!nis) { alert("Masukkan NIS!"); return; }
     
-    db.ref('master_data/siswa/' + uid).once('value').then((snapshot) => {
+    db.ref('master_data/siswa').orderByChild('nis').equalTo(nis).once('value').then((snapshot) => {
         if(snapshot.exists()) {
+            let uid = Object.keys(snapshot.val())[0];
+            let d = snapshot.val()[uid];
             currentUid = uid;
-            let d = snapshot.val();
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('bottomNav').style.display = 'flex';
             showPage('beranda', d);
         } else {
-            alert("ID Kartu tidak ditemukan!");
+            alert("NIS tidak ditemukan! Periksa kembali penulisan NIS.");
         }
     });
 }
