@@ -99,16 +99,15 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-database-compat.js"></script>
 <script>
-// PASTE FIREBASE CONFIG ANDA DI SINI
+// FIREBASE CONFIG (SUDAH DIPERBAIKI SESUAI PROJECT ANDA)
 const firebaseConfig = {
   apiKey: "AIzaSyB6UX6KIwVCCfArhcrVum2aIQyTHjMXfKU",
-  authDomain: "absensi-pelajar.firebaseapp.com",
-  databaseURL: "https://absensi-pelajar-default-rtdb.asia-southeast1.firebasedatabase.com",
-  projectId: "absensi-pelajar",
-  storageBucket: "absensi-pelajar.firebasestorage.app",
+  authDomain: "absensi-sekolah-satu.firebaseapp.com",
+  databaseURL: "https://absensi-sekolah-satu-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "absensi-sekolah-satu",
+  storageBucket: "absensi-sekolah-satu.firebasestorage.app",
   messagingSenderId: "194969066694",
-  appId: "1:194969066694:web:2f351904c2c1642c7ccbc7",
-  measurementId: "G-8Y4KH2WXNW"
+  appId: "1:194969066694:web:2f351904c2c1642c7ccbc7"
 };
 
 // Inisialisasi Firebase
@@ -177,7 +176,6 @@ function saveSiswa() {
     if(key) {
         db.ref('master_data/siswa/' + key).update(data);
     } else {
-        // PERBAIKAN: Menggunakan UID sebagai Key Utama agar ESP32 mudah menemukannya
         db.ref('master_data/siswa/' + uid).set(data);
     }
     alert("Data siswa tersimpan!");
