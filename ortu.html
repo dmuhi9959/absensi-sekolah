@@ -16,17 +16,14 @@ body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflo
 .form-group input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:1rem}
 .btn{width:100%;padding:14px;background:#1a8a6f;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer;margin-top:10px}
 .btn-logout{background:#f44336;margin-top:20px}
-
 .profile-card{background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);text-align:center;margin-bottom:20px}
 .profile-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 10px;display:block;border:3px solid #1a8a6f}
 .profile-name{font-size:1.2rem;font-weight:bold;color:#333}
 .profile-class{font-size:0.9rem;color:#666}
-
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
 .menu-box{background:#fff;padding:15px;border-radius:10px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,0.05);cursor:pointer}
 .menu-box i{font-size:1.5rem;color:#1a8a6f;margin-bottom:5px}
 .menu-box span{display:block;font-size:0.8rem;font-weight:bold;color:#333}
-
 .card{background:#fff;padding:15px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:15px}
 .card h3{margin-bottom:10px;color:#1a8a6f;font-size:1rem;border-bottom:2px solid #f0f0f0;padding-bottom:5px}
 table{width:100%;border-collapse:collapse;font-size:0.85rem}
@@ -34,8 +31,13 @@ th{background:#f0f2f5;padding:8px;text-align:left}
 td{padding:8px;border-bottom:1px solid #eee}
 .text-center{text-align:center}
 .text-right{text-align:right;font-weight:bold;color:#1a8a6f;font-size:1.1rem}
-
-/* Bottom Navigation 5 Menu */
+.stat-box{display:flex;justify-content:space-around;text-align:center;margin-bottom:10px}
+.stat-item{flex:1;background:#f9f9f9;padding:10px;border-radius:8px;margin:0 5px}
+.stat-item .num{font-size:1.2rem;font-weight:bold;color:#1a8a6f}
+.stat-item .lbl{font-size:0.7rem;color:#666}
+.badge{padding:3px 8px;border-radius:5px;font-size:0.75rem;font-weight:bold;color:#fff}
+.badge-lunas{background:#4caf50}
+.badge-belum{background:#f44336}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:8px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
 .nav-item{display:flex;flex-direction:column;align-items:center;color:#888;cursor:pointer;font-size:0.6rem;gap:2px}
 .nav-item.active{color:#1a8a6f}
@@ -44,27 +46,20 @@ td{padding:8px;border-bottom:1px solid #eee}
 </style>
 </head>
 <body>
-
 <div class="header">Jendela Sekolah</div>
-
 <div class="content" id="mainContent">
     <div class="login-box" id="loginPage">
         <h3 style="text-align:center;margin-bottom:15px;">Login Orang Tua</h3>
-        <div class="form-group">
-            <label>Masukkan NIS Siswa</label>
-            <input id="loginNis" placeholder="Contoh: 12345">
-        </div>
+        <div class="form-group"><label>Masukkan NIS Siswa</label><input id="loginNis" placeholder="Contoh: 12345"></div>
         <button class="btn" onclick="loginOrtu()">Masuk</button>
         <p style="font-size:0.75rem;color:#888;text-align:center;margin-top:15px;">NIS dapat ditanyakan ke wali kelas masing-masing.</p>
     </div>
 </div>
-
 <div class="bottom-nav" id="bottomNav" style="display:none;">
     <div class="nav-item active" onclick="showPage('beranda')"><i class="fas fa-home"></i> Beranda</div>
+    <div class="nav-item" onclick="showPage('akademik')"><i class="fas fa-book"></i> Akademik</div>
+    <div class="nav-item" onclick="showPage('keuangan')"><i class="fas fa-wallet"></i> Keuangan</div>
     <div class="nav-item" onclick="showPage('info')"><i class="fas fa-bullhorn"></i> Info</div>
-    <div class="nav-item" onclick="showPage('uang')"><i class="fas fa-wallet"></i> Uang</div>
-    <div class="nav-item" onclick="showPage('nilai')"><i class="fas fa-book"></i> Nilai</div>
-    <div class="nav-item" onclick="showPage('jadwal')"><i class="fas fa-calendar-alt"></i> Jadwal</div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
@@ -79,7 +74,6 @@ const firebaseConfig = {
   messagingSenderId: "194969066694",
   appId: "1:194969066694:web:2f351904c2c1642c7ccbc7"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let currentUid = "";
@@ -87,7 +81,6 @@ let currentUid = "";
 function loginOrtu() {
     let nis = document.getElementById('loginNis').value.trim();
     if(!nis) { alert("Masukkan NIS!"); return; }
-    
     db.ref('master_data/siswa').orderByChild('nis').equalTo(nis).once('value').then((snapshot) => {
         if(snapshot.exists()) {
             let uid = Object.keys(snapshot.val())[0];
@@ -96,9 +89,7 @@ function loginOrtu() {
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('bottomNav').style.display = 'flex';
             showPage('beranda', d);
-        } else {
-            alert("NIS tidak ditemukan! Periksa kembali penulisan NIS.");
-        }
+        } else { alert("NIS tidak ditemukan! Periksa kembali penulisan NIS."); }
     });
 }
 
@@ -107,142 +98,145 @@ function showPage(page, siswaData = null) {
     window.cachedSiswa = data;
     let content = document.getElementById('mainContent');
     let html = '';
-    
-    // Update active nav
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     let activeNav = document.querySelector(`.nav-item[onclick="showPage('${page}')"]`);
     if(activeNav) activeNav.classList.add('active');
     
     if(page === 'beranda') {
-        html += `
-        <div class="profile-card">
-            ${data.photo ? `<img src="${data.photo}" class="profile-photo">` : `<i class="fas fa-user-circle" style="font-size:80px;color:#ccc;"></i>`}
-            <div class="profile-name">${data.nama}</div>
-            <div class="profile-class">Kelas: ${data.kelas}</div>
-        </div>
-        <div class="menu-grid">
-            <div class="menu-box" onclick="showPage('info')"><i class="fas fa-bullhorn"></i><span>Info Sekolah</span></div>
-            <div class="menu-box" onclick="showPage('uang')"><i class="fas fa-wallet"></i><span>Tabungan</span></div>
-            <div class="menu-box" onclick="showPage('nilai')"><i class="fas fa-book"></i><span>Nilai Siswa</span></div>
-            <div class="menu-box" onclick="showPage('jadwal')"><i class="fas fa-calendar-alt"></i><span>Jadwal Pelajaran</span></div>
-        </div>
-        <div class="card">
-            <h3>Absensi 7 Hari Terakhir</h3>
-            <table><thead><tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="bodyRiwayat"><tr><td colspan="3" class="text-center">Memuat...</td></tr></tbody></table>
-        </div>`;
-        loadRiwayatAbsen();
+        html += `<div class="profile-card">${data.photo ? `<img src="${data.photo}" class="profile-photo">` : `<i class="fas fa-user-circle" style="font-size:80px;color:#ccc;"></i>`}<div class="profile-name">${data.nama}</div><div class="profile-class">Kelas: ${data.kelas}</div></div>`;
+        html += `<div class="card"><h3>Statistik Absensi Bulanan</h3><div id="bodyStatistik" class="stat-box"><div class="stat-item"><div class="num">-</div><div class="lbl">Hadir</div></div><div class="stat-item"><div class="num">-</div><div class="lbl">Izin</div></div><div class="stat-item"><div class="num">-</div><div class="lbl">Alpa</div></div></div></div>`;
+        html += `<div class="card"><h3>Catatan Wali Kelas</h3><div id="bodyCatatan">Memuat...</div></div>`;
+        html += `<div class="card"><h3>Prestasi / Reward</h3><div id="bodyPrestasi">Memuat...</div></div>`;
+        html += `<div class="card"><h3>Absensi 7 Hari Terakhir</h3><table><thead><tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="bodyRiwayat"><tr><td colspan="3" class="text-center">Memuat...</td></tr></tbody></table></div>`;
+        loadStatistikBulanan(); loadCatatan(); loadPrestasi(); loadRiwayatAbsen();
     } 
-    else if(page === 'info') {
-        html += `<div class="card"><h3>Informasi Sekolah</h3><div id="bodyInfo">Memuat...</div></div>`;
-        loadInfo();
+    else if(page === 'akademik') {
+        html += `<div class="card"><h3>Tugas / PR Sekolah</h3><div id="bodyTugas">Memuat...</div></div>`;
+        html += `<div class="card"><h3>Jadwal Pelajaran</h3><div id="bodyJadwal">Memuat...</div></div>`;
+        html += `<div class="card"><h3>Nilai Harian</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyHarian"><tr><td colspan="2" class="text-center">Memuat...</td></tr></tbody></table></div>`;
+        html += `<div class="card"><h3>Nilai Ujian</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyUjian"><tr><td colspan="2" class="text-center">Memuat...</td></tr></tbody></table></div>`;
+        html += `<div class="card"><h3>Nilai Rapot</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyRapot"><tr><td colspan="2" class="text-center">Memuat...</td></tr></tbody></table></div>`;
+        loadTugas(data.kelas); loadJadwal(data.kelas); loadNilai();
     }
-    else if(page === 'uang') {
+    else if(page === 'keuangan') {
+        let today = new Date(); let bulanKini = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+        html += `<div class="card"><h3>Status SPP Bulan Ini (${bulanKini})</h3><div id="bodySPP" style="text-align:center;font-size:1.2rem;padding:10px;">Memuat...</div></div>`;
         html += `<div class="card"><h3>Tabungan Siswa</h3><div id="bodyUang">Memuat...</div></div>`;
-        loadUang();
+        loadSPP(bulanKini); loadUang();
     }
-    else if(page === 'nilai') {
-        html += `
-        <div class="card"><h3>Nilai Harian</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyHarian"><tr><td colspan="2" class="text-center">Memuat...</td></tr></tbody></table></div>
-        <div class="card"><h3>Nilai Ujian</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyUjian"><tr><td colspan="2" class="text-center">Memuat...</td></tr></tbody></table></div>
-        <div class="card"><h3>Nilai Rapot</h3><table><thead><tr><th>Mapel</th><th>Nilai</th></tr></thead><tbody id="bodyRapot"><tr><td colspan="2" class="text-center">Memuat...</td></tr></tbody></table></div>`;
-        loadNilai();
+    else if(page === 'info') {
+        html += `<div class="card"><h3>Agenda Sekolah</h3><div id="bodyAgenda">Memuat...</div></div>`;
+        html += `<div class="card"><h3>Informasi/Pengumuman</h3><div id="bodyInfo">Memuat...</div></div>`;
+        loadAgenda(); loadInfo();
     }
-    else if(page === 'jadwal') {
-        html += `<div class="card"><h3>Jadwal Pelajaran</h3><div id="bodyJadwal" style="margin-top:10px;">Memuat...</div></div>`;
-        loadJadwal(data.kelas);
-    }
-    
     html += `<div class="footer-text">Jaringan Informasi Bersama Antar Sekolah</div><button class="btn btn-logout" onclick="location.reload()">Keluar</button>`;
     content.innerHTML = html;
 }
 
+function loadStatistikBulanan() {
+    let today = new Date(); let yearMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+    let hadir=0, izin=0, alpa=0;
+    db.ref('master_data/siswa').once('value').then(snapSiswa => {
+        let totalSiswa = snapSiswa.numChildren(); // Tidak dipakai, ini hanya untuk skip error
+        db.ref('absensi').orderByKey().startAt(yearMonth + '-01').endAt(yearMonth + '-31').once('value').then((snap) => {
+            snap.forEach(dateChild => {
+                dateChild.forEach(siswaChild => {
+                    if(siswaChild.key === currentUid) {
+                        let d = siswaChild.val();
+                        if(d.status === 'Izin' || d.status === 'Sakit') izin++;
+                        else if(d.masuk || d.keluar) hadir++;
+                    }
+                });
+            });
+            // Alpa sulit dihitung akurat tanpa data hari libur, jadi kita estimasi berdasarkan hari kerja yang lalu di bulan ini
+            // Untuk simplifikasi, kita tampilkan hadir dan izin saja, alpa = hari kerja - hadir - izin (dummy)
+            let el = document.getElementById('bodyStatistik');
+            if(el) el.innerHTML = `<div class="stat-item"><div class="num" style="color:#4caf50">${hadir}</div><div class="lbl">Hadir</div></div><div class="stat-item"><div class="num" style="color:#ff9800">${izin}</div><div class="lbl">Izin/Sakit</div></div><div class="stat-item"><div class="num" style="color:#f44336">-</div><div class="lbl">Alpa</div></div>`;
+        });
+    });
+}
+
 function loadRiwayatAbsen() {
-    let today = new Date();
-    let riwayatHtml = '';
-    let count = 0;
+    let today = new Date(); let riwayatHtml = ''; let count = 0;
     for(let i=0; i<7; i++) {
-        let d = new Date(today);
-        d.setDate(d.getDate() - i);
+        let d = new Date(today); d.setDate(d.getDate() - i);
         let dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         db.ref('absensi/' + dateStr + '/' + currentUid).once('value').then((snap) => {
-            count++;
-            let absen = snap.val();
-            let tglFormat = dateStr.split('-').reverse().join('-');
+            count++; let absen = snap.val(); let tglFormat = dateStr.split('-').reverse().join('-');
             if(absen) riwayatHtml += `<tr><td>${tglFormat}</td><td>${absen.masuk || '-'}</td><td>${absen.keluar || '-'}</td></tr>`;
             else riwayatHtml += `<tr><td>${tglFormat}</td><td colspan="2" class="text-center">Tidak ada catatan</td></tr>`;
-            if(count === 7) {
-                let el = document.getElementById('bodyRiwayat');
-                if(el) el.innerHTML = riwayatHtml;
-            }
+            if(count === 7) { let el = document.getElementById('bodyRiwayat'); if(el) el.innerHTML = riwayatHtml; }
         });
     }
 }
 
-function loadInfo() {
-    db.ref('info').limitToLast(5).once('value').then((snapshot) => {
-        let html = '';
-        if(snapshot.exists()) {
-            snapshot.forEach((child) => {
-                let d = child.val();
-                html += `<div style="border-bottom:1px solid #eee;padding:10px 0;"><strong>${d.judul}</strong><br><small>${d.tanggal}</small><p style="margin-top:5px;font-size:0.85rem;">${d.isi}</p></div>`;
-            });
-        } else { html = '<p class="text-center">Belum ada info</p>'; }
-        let el = document.getElementById('bodyInfo');
-        if(el) el.innerHTML = html;
+function loadCatatan() {
+    db.ref('catatan/' + currentUid).limitToLast(3).once('value').then((snap) => {
+        let html = ''; if(snap.exists()) { snap.forEach(c => { let d=c.val(); html += `<div style="border-bottom:1px solid #eee;padding:8px 0;"><small>${d.tanggal}</small><p style="font-size:0.85rem;margin-top:3px;">${d.isi}</p></div>`; }); } else { html = '<p class="text-center">Belum ada catatan</p>'; }
+        let el = document.getElementById('bodyCatatan'); if(el) el.innerHTML = html;
     });
 }
 
-function loadUang() {
-    db.ref('tabungan/' + currentUid).once('value').then((snapshot) => {
-        let d = snapshot.val();
-        let html = `<p style="text-align:center;font-size:0.9rem;">Saldo Tabungan</p><h2 class="text-right">Rp ${d ? (d.saldo || 0).toLocaleString('id-ID') : '0'}</h2>`;
-        html += `<table style="margin-top:15px;"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jumlah</th></tr></thead><tbody>`;
-        if(d && d.riwayat) {
-            Object.keys(d.riwayat).reverse().forEach(k => {
-                let r = d.riwayat[k];
-                html += `<tr><td>${r.tanggal}</td><td>${r.jenis}</td><td>${r.jumlah}</td></tr>`;
-            });
-        } else {
-            html += `<tr><td colspan="3" class="text-center">Belum ada riwayat</td></tr>`;
-        }
-        html += `</tbody></table>`;
-        let el = document.getElementById('bodyUang');
-        if(el) el.innerHTML = html;
+function loadPrestasi() {
+    db.ref('prestasi/' + currentUid).limitToLast(5).once('value').then((snap) => {
+        let html = ''; if(snap.exists()) { snap.forEach(c => { let d=c.val(); html += `<div style="border-bottom:1px solid #eee;padding:8px 0;"><strong>${d.jenis}</strong> <span class="badge badge-lunas" style="float:right;">+${d.poin} Poin</span><br><small>${d.tanggal}</small></div>`; }); } else { html = '<p class="text-center">Belum ada prestasi</p>'; }
+        let el = document.getElementById('bodyPrestasi'); if(el) el.innerHTML = html;
+    });
+}
+
+function loadTugas(kelas) {
+    db.ref('tugas/' + kelas).limitToLast(5).once('value').then((snap) => {
+        let html = ''; if(snap.exists()) { snap.forEach(c => { let d=c.val(); html += `<div style="border-bottom:1px solid #eee;padding:8px 0;"><strong>${d.mapel}</strong><br><small>${d.tanggal}</small><p style="font-size:0.85rem;margin-top:3px;">${d.isi}</p></div>`; }); } else { html = '<p class="text-center">Belum ada tugas</p>'; }
+        let el = document.getElementById('bodyTugas'); if(el) el.innerHTML = html;
+    });
+}
+
+function loadJadwal(kelas) {
+    db.ref('jadwal/' + kelas).once('value').then((snap) => {
+        let html = ''; if(snap.exists()) { snap.forEach(hariChild => { html += `<strong style="display:block;margin-top:10px;color:#1a8a6f;">${hariChild.key}</strong><ul style="padding-left:20px;font-size:0.85rem;margin-top:5px;">`; hariChild.forEach(jamChild => { let j=jamChild.val(); html += `<li>${j.jam} - ${j.mapel}</li>`; }); html += `</ul>`; }); } else { html = '<p class="text-center">Belum ada jadwal</p>'; }
+        let el = document.getElementById('bodyJadwal'); if(el) el.innerHTML = html;
     });
 }
 
 function loadNilai() {
     ['harian', 'ujian', 'rapot'].forEach(tipe => {
         db.ref('nilai/' + currentUid + '/' + tipe).once('value').then((snap) => {
-            let html = '';
-            if(snap.exists()) {
-                snap.forEach((child) => {
-                    html += `<tr><td>${child.key}</td><td>${child.val()}</td></tr>`;
-                });
-            } else { html = `<tr><td colspan="2" class="text-center">Belum ada nilai</td></tr>`; }
-            let el = document.getElementById('body' + tipe.charAt(0).toUpperCase() + tipe.slice(1));
-            if(el) el.innerHTML = html;
+            let html = ''; if(snap.exists()) { snap.forEach(child => { html += `<tr><td>${child.key}</td><td>${child.val()}</td></tr>`; }); } else { html = `<tr><td colspan="2" class="text-center">Belum ada nilai</td></tr>`; }
+            let el = document.getElementById('body' + tipe.charAt(0).toUpperCase() + tipe.slice(1)); if(el) el.innerHTML = html;
         });
     });
 }
 
-function loadJadwal(kelas) {
-    db.ref('jadwal/' + kelas).once('value').then((snap) => {
-        let html = '';
-        if(snap.exists()) {
-            snap.forEach((hariChild) => {
-                html += `<strong style="display:block;margin-top:10px;color:#1a8a6f;">${hariChild.key}</strong><ul style="padding-left:20px;font-size:0.85rem;margin-top:5px;">`;
-                hariChild.forEach((jamChild) => {
-                    let j = jamChild.val();
-                    html += `<li>${j.jam} - ${j.mapel}</li>`;
-                });
-                html += `</ul>`;
-            });
-        } else { 
-            html = '<p class="text-center">Belum ada jadwal</p>'; 
-        }
-        let el = document.getElementById('bodyJadwal');
-        if(el) el.innerHTML = html;
+function loadSPP(bulanKini) {
+    db.ref('spp/' + currentUid + '/' + bulanKini).once('value').then((snap) => {
+        let d = snap.val(); let html = '';
+        if(d && d.status === 'Lunas') html = `<span class="badge badge-lunas" style="font-size:1rem;padding:10px 20px;">LUNAS</span>`;
+        else html = `<span class="badge badge-belum" style="font-size:1rem;padding:10px 20px;">BELUM BAYAR</span>`;
+        let el = document.getElementById('bodySPP'); if(el) el.innerHTML = html;
+    });
+}
+
+function loadUang() {
+    db.ref('tabungan/' + currentUid).once('value').then((snap) => {
+        let d = snap.val(); let html = `<p style="text-align:center;font-size:0.9rem;">Saldo Tabungan</p><h2 class="text-right">Rp ${d ? (d.saldo || 0).toLocaleString('id-ID') : '0'}</h2>`;
+        html += `<table style="margin-top:15px;"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jumlah</th></tr></thead><tbody>`;
+        if(d && d.riwayat) { Object.keys(d.riwayat).reverse().forEach(k => { let r=d.riwayat[k]; html += `<tr><td>${r.tanggal}</td><td>${r.jenis}</td><td>${r.jumlah}</td></tr>`; }); } else { html += `<tr><td colspan="3" class="text-center">Belum ada riwayat</td></tr>`; }
+        html += `</tbody></table>`;
+        let el = document.getElementById('bodyUang'); if(el) el.innerHTML = html;
+    });
+}
+
+function loadAgenda() {
+    db.ref('agenda').limitToLast(5).once('value').then((snap) => {
+        let html = ''; if(snap.exists()) { snap.forEach(c => { let d=c.val(); html += `<div style="border-bottom:1px solid #eee;padding:10px 0;"><strong>${d.judul}</strong><br><small>${d.tanggal}</small><p style="margin-top:5px;font-size:0.85rem;">${d.isi}</p></div>`; }); } else { html = '<p class="text-center">Belum ada agenda</p>'; }
+        let el = document.getElementById('bodyAgenda'); if(el) el.innerHTML = html;
+    });
+}
+
+function loadInfo() {
+    db.ref('info').limitToLast(5).once('value').then((snap) => {
+        let html = ''; if(snap.exists()) { snap.forEach(c => { let d=c.val(); html += `<div style="border-bottom:1px solid #eee;padding:10px 0;"><strong>${d.judul}</strong><br><small>${d.tanggal}</small><p style="margin-top:5px;font-size:0.85rem;">${d.isi}</p></div>`; }); } else { html = '<p class="text-center">Belum ada info</p>'; }
+        let el = document.getElementById('bodyInfo'); if(el) el.innerHTML = html;
     });
 }
 </script>
