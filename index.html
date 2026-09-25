@@ -30,6 +30,7 @@ body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflo
 .form-group input, .form-group select, .form-group textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:1rem;font-family:inherit;background:#fff}
 .btn{width:100%;padding:14px;background:#1a8a6f;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer;margin-top:10px}
 .btn-blue{background:#2196f3}
+.btn-green{background:#4caf50}
 .btn-danger{background:#f44336}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
 th{background:#1a8a6f;color:#fff;padding:12px;text-align:left;font-size:0.8rem}
@@ -47,7 +48,8 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 .nav-item.active{color:#1a8a6f}
 .nav-item i{font-size:1.2rem}
 
-.info-print{background:#e3f2fd;padding:10px;border-radius:8px;font-size:0.8rem;color:#0d47a1;text-align:center;margin-bottom:10px}
+.btn-row{display:flex;gap:10px; margin-bottom:10px}
+.btn-row .btn{margin-top:0}
 </style>
 </head>
 <body>
@@ -406,13 +408,16 @@ function renderAbsenHariIni() { let f=document.getElementById('filterKelasAbsen'
     if(fil.length>0) { fil.forEach((d)=>{ h+=`<tr><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); } else { h+=`<tr><td colspan="5" style="text-align:center">Belum ada data</td></tr>`; } h+=`</tbody></table>`; document.getElementById('tabelAbsenHariIni').innerHTML=h;
 }
 
-// --- FUNGSI REKAP & EXPORT CSV (ANTI CRASH) ---
+// --- FUNGSI REKAP & EXPORT EXCEL / COPY ---
 function cariRange() { 
     let m = document.getElementById('tglMulai').value, a = document.getElementById('tglAkhir').value; 
     document.getElementById('hasilRange').innerHTML = '<p>Memuat data...</p>';
     
     db.ref('absensi').orderByKey().startAt(m).endAt(a).once('value').then((snap) => { 
-        let h = `<button class="btn btn-blue" onclick="downloadCSV()" style="margin-bottom:10px;"><i class="fas fa-download"></i> Download File (CSV/Excel)</button>
+        let h = `<div class="btn-row">
+                    <button class="btn btn-blue" onclick="downloadXLS()"><i class="fas fa-download"></i> Excel</button>
+                    <button class="btn btn-green" onclick="copyTable()"><i class="fas fa-copy"></i> Copy Data</button>
+                 </div>
                  <table id="tabelRange" style="background:#fff;"><thead><tr><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody>`;
         
         if(snap.exists()) { 
@@ -430,34 +435,50 @@ function cariRange() {
     }); 
 }
 
-function downloadCSV() {
+// 1. Fungsi Download XLS (Untuk PC / Laptop)
+function downloadXLS() {
     let table = document.getElementById('tabelRange');
     if(!table) return alert("Tidak ada data!");
     
-    let csv = [];
+    let html = '<meta charset="UTF-8"><table border="1">';
     let rows = table.querySelectorAll("tr");
-    
     for (let i = 0; i < rows.length; i++) {
-        let row = [], cols = rows[i].querySelectorAll("td, th");
+        html += '<tr>';
+        let cols = rows[i].querySelectorAll("td, th");
         for (let j = 0; j < cols.length; j++) {
-            let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s\s)/gm, " ");
-            data = data.replace(/"/g, '""');
-            row.push('"' + data + '"');
+            html += '<td>' + cols[j].innerText + '</td>';
         }
-        csv.push(row.join(","));
+        html += '</tr>';
     }
-    
-    let csvString = "\ufeff" + csv.join("\n"); 
-    let blob = new Blob([csvString], {type: "text/csv;charset=utf-8;"});
-    let url = URL.createObjectURL(blob);
+    html += '</table>';
+
+    let url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
     
     let a = document.createElement('a');
     a.href = url;
-    a.download = 'Rekap_Absensi.csv';
+    a.download = 'Rekap_Absensi.xls';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+}
+
+// 2. Fungsi Copy Data (Anti-Crash untuk HP/APK)
+function copyTable() {
+    let table = document.getElementById('tabelRange');
+    if(!table) return alert("Tidak ada data!");
+    
+    let range = document.createRange();
+    range.selectNode(table);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    
+    try {
+        document.execCommand('copy');
+        alert('Data berhasil disalin! Silakan buka Microsoft Excel di HP/PC Anda, lalu klik Kanan -> Paste (Tempel).');
+    } catch (err) {
+        alert('Gagal menyalin data di perangkat ini.');
+    }
+    window.getSelection().removeAllRanges();
 }
 
 loadDashboard();
