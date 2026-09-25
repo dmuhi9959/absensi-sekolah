@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Jendela Sekolah - Admin</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- Library html2canvas untuk mengubah tabel jadi gambar -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
 body{background:#f0f2f5;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
@@ -49,8 +47,6 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 .nav-item.active{color:#1a8a6f}
 .nav-item i{font-size:1.2rem}
 
-/* Style untuk gambar rekap */
-.rekap-img{width:100%;border:1px solid #ddd;border-radius:8px;margin-top:15px;background:#fff}
 .info-print{background:#e3f2fd;padding:10px;border-radius:8px;font-size:0.8rem;color:#0d47a1;text-align:center;margin-bottom:10px}
 </style>
 </head>
@@ -125,7 +121,7 @@ function loadDashboard() {
 
                 <div class="folder-title">Laporan</div>
                 <div class="dash-grid">
-                    <div class="dash-card" onclick="loadPage('absenRange')"><div class="icon" style="background:#795548"><i class="fas fa-print"></i></div><h3>Rekap Absensi</h3><p>Print / PDF</p></div>
+                    <div class="dash-card" onclick="loadPage('absenRange')"><div class="icon" style="background:#795548"><i class="fas fa-file-excel"></i></div><h3>Rekap Absensi</h3><p>Export Excel</p></div>
                 </div>
             `;
         });
@@ -188,7 +184,7 @@ function loadPage(page) {
         loadAbsenHariIni();
     } 
     else if(page === 'absenRange') {
-        title.innerText = "Rekap & Print Absensi";
+        title.innerText = "Rekap & Export Excel";
         content.innerHTML = `
             <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
             <div style="background:#fff; padding:15px; border-radius:8px;">
@@ -410,13 +406,13 @@ function renderAbsenHariIni() { let f=document.getElementById('filterKelasAbsen'
     if(fil.length>0) { fil.forEach((d)=>{ h+=`<tr><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); } else { h+=`<tr><td colspan="5" style="text-align:center">Belum ada data</td></tr>`; } h+=`</tbody></table>`; document.getElementById('tabelAbsenHariIni').innerHTML=h;
 }
 
-// --- FUNGSI REKAP & PRINT GAMBAR (ANTI CRASH) ---
+// --- FUNGSI REKAP & EXPORT CSV (ANTI CRASH) ---
 function cariRange() { 
     let m = document.getElementById('tglMulai').value, a = document.getElementById('tglAkhir').value; 
     document.getElementById('hasilRange').innerHTML = '<p>Memuat data...</p>';
     
     db.ref('absensi').orderByKey().startAt(m).endAt(a).once('value').then((snap) => { 
-        let h = `<button class="btn btn-blue" onclick="printRekap()" style="margin-bottom:10px;"><i class="fas fa-print"></i> Buat Gambar / Print</button>
+        let h = `<button class="btn btn-blue" onclick="downloadCSV()" style="margin-bottom:10px;"><i class="fas fa-download"></i> Download File (CSV/Excel)</button>
                  <table id="tabelRange" style="background:#fff;"><thead><tr><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody>`;
         
         if(snap.exists()) { 
@@ -434,67 +430,34 @@ function cariRange() {
     }); 
 }
 
-function printRekap() { 
-    let table = document.getElementById('tabelRange'); 
-    if(!table) return alert("Tidak ada data untuk dicetak!"); 
+function downloadCSV() {
+    let table = document.getElementById('tabelRange');
+    if(!table) return alert("Tidak ada data!");
     
-    document.getElementById('hasilRange').innerHTML = '<p style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Sedang membuat gambar, mohon tunggu...</p>';
-
-    // Buat div sementara di luar layar untuk render gambar agar bersih
-    let tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.width = '800px'; // Lebar standar kertas
-    tempDiv.style.background = '#fff';
-    tempDiv.style.padding = '20px';
+    let csv = [];
+    let rows = table.querySelectorAll("tr");
     
-    let title = document.createElement('h2');
-    title.innerText = 'Rekap Absensi Siswa';
-    title.style.textAlign = 'center';
-    title.style.fontFamily = 'sans-serif';
-    title.style.marginBottom = '20px';
-
-    let clonedTable = table.cloneNode(true);
-    clonedTable.style.width = '100%';
-    clonedTable.style.borderCollapse = 'collapse';
+    for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let j = 0; j < cols.length; j++) {
+            let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s\s)/gm, " ");
+            data = data.replace(/"/g, '""');
+            row.push('"' + data + '"');
+        }
+        csv.push(row.join(","));
+    }
     
-    // Tambahin border hitam biar kelihatan di gambar
-    clonedTable.querySelectorAll('th, td').forEach(el => {
-        el.style.border = '1px solid #000';
-        el.style.padding = '8px';
-        el.style.fontSize = '12px';
-        el.style.textAlign = 'left';
-    });
-    clonedTable.querySelectorAll('th').forEach(el => {
-        el.style.background = '#f0f0f0';
-    });
-
-    tempDiv.appendChild(title);
-    tempDiv.appendChild(clonedTable);
-    document.body.appendChild(tempDiv);
-
-    // Proses ubah ke gambar pakai html2canvas
-    html2canvas(tempDiv, {scale: 2}).then(canvas => {
-        document.body.removeChild(tempDiv); // Hapus div sementara
-        
-        // Ubah canvas jadi link gambar (JPEG)
-        let imgData = canvas.toDataURL('image/jpeg', 0.9);
-        
-        // Tampilkan gambar ke layar pengguna
-        let html = `
-            <div class="info-print">
-                <strong>Cara Print / Save:</strong><br>
-                Tekan lama gambar di bawah, lalu pilih <strong>Simpan Gambar</strong> atau <strong>Bagikan (Share)</strong> ke Printer Bluetooth Anda.
-            </div>
-            <img src="${imgData}" class="rekap-img" alt="Rekap Absensi">
-            <br>
-            <button class="btn btn-blue" onclick="printRekap()"><i class="fas fa-redo"></i> Buat Ulang Gambar</button>
-        `;
-        document.getElementById('hasilRange').innerHTML = html;
-    }).catch(err => {
-        document.body.removeChild(tempDiv);
-        alert("Gagal membuat gambar: " + err.message);
-    });
+    let csvString = "\ufeff" + csv.join("\n"); 
+    let blob = new Blob([csvString], {type: "text/csv;charset=utf-8;"});
+    let url = URL.createObjectURL(blob);
+    
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'Rekap_Absensi.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 loadDashboard();
