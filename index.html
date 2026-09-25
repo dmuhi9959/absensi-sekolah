@@ -119,7 +119,11 @@ function loadPage(page) {
     } else if(page === 'absenRange') { title.innerText = "Rekap & Export Excel"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Dari Tanggal</label><input type="date" id="tglMulai"></div><div class="form-group"><label>Sampai Tanggal</label><input type="date" id="tglAkhir"></div><button class="btn" onclick="cariRange()"><i class="fas fa-search"></i> Cari Data</button></div><div id="hasilRange" style="margin-top:15px;"></div>`;
     } else if(page === 'inputIzin') { title.innerText = "Input Izin/Sakit"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Pilih Kelas</label><select id="izinKelas" onchange="loadSiswaForIzin(this.value)"><option value="">-- Pilih Kelas --</option></select></div><div class="form-group"><label>Pilih Siswa</label><select id="izinSiswa" disabled><option value="">-- Pilih Kelas Dulu --</option></select></div><div class="form-group"><label>Status</label><select id="izinStatus"><option value="Izin">Izin</option><option value="Sakit">Sakit</option></select></div><button class="btn" onclick="simpanIzin()">Simpan Izin/Sakit</button></div>`; loadKelasDropdown('izinKelas');
     } else if(page === 'inputNilai') { title.innerText = "Input Nilai Siswa"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Pilih Kelas</label><select id="nilaiKelas" onchange="loadSiswaForNilai(this.value)"><option value="">-- Pilih Kelas --</option></select></div><div class="form-group"><label>Pilih Siswa</label><select id="nilaiSiswa" disabled><option value="">-- Pilih Kelas Dulu --</option></select></div><div class="form-group"><label>Jenis Nilai</label><select id="nilaiTipe"><option value="harian">Harian</option><option value="ujian">Ujian</option><option value="rapot">Rapot</option></select></div><div class="form-group"><label>Mata Pelajaran</label><input id="nilaiMapel" placeholder="Contoh: Matematika"></div><div class="form-group"><label>Nilai</label><input type="number" id="nilaiAngka" placeholder="0-100"></div><button class="btn" onclick="simpanNilai()">Simpan Nilai</button></div>`; loadKelasDropdown('nilaiKelas');
-    } else if(page === 'inputJadwal') { title.innerText = "Input Jadwal Pelajaran"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Kelas</label><select id="jadwalKelas"><option value="">Loading...</option></select></div><div class="form-group"><label>Hari</label><select id="jadwalHari"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option></select></div><div class="form-group"><label>Jam</label><input id="jadwalJam" placeholder="Contoh: 07:00 - 08:30"></div><div class="form-group"><label>Mata Pelajaran</label><input id="jadwalMapel" placeholder="Contoh: Matematika"></div><button class="btn" onclick="simpanJadwal()">Simpan Jadwal</button></div><div style="background:#fff; padding:15px; border-radius:8px; margin-top:15px;"><h3 style="margin-bottom:10px">Jadwal Aktif</h3><div id="listJadwal">Pilih kelas untuk melihat jadwal</div></div>`; loadKelasDropdown('jadwalKelas'); document.getElementById('jadwalKelas').onchange = function() { loadJadwalList(this.value); };
+    } else if(page === 'inputJadwal') { 
+        title.innerText = "Input Jadwal Pelajaran"; 
+        content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><input type="hidden" id="jadwalKey"><div class="form-group"><label>Kelas</label><select id="jadwalKelas"><option value="">Loading...</option></select></div><div class="form-group"><label>Hari</label><select id="jadwalHari"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option></select></div><div class="form-group"><label>Jam</label><input id="jadwalJam" placeholder="Contoh: 07:00 - 08:30"></div><div class="form-group"><label>Mata Pelajaran</label><input id="jadwalMapel" placeholder="Contoh: Matematika"></div><button class="btn" onclick="simpanJadwal()">Simpan Jadwal</button><button class="btn btn-danger" id="batalEditJadwal" onclick="resetFormJadwal()" style="display:none; margin-top:10px;">Batal Edit</button></div><div style="background:#fff; padding:15px; border-radius:8px; margin-top:15px;"><h3 style="margin-bottom:10px">Jadwal Aktif</h3><div id="listJadwal">Pilih kelas untuk melihat jadwal</div></div>`; 
+        loadKelasDropdown('jadwalKelas'); 
+        document.getElementById('jadwalKelas').onchange = function() { resetFormJadwal(); loadJadwalList(this.value); }; 
     } else if(page === 'inputTabungan') { title.innerText = "Input Tabungan Siswa"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Pilih Kelas</label><select id="tabKelas" onchange="loadSiswaForTab(this.value)"><option value="">-- Pilih Kelas --</option></select></div><div class="form-group"><label>Pilih Siswa</label><select id="tabSiswa" disabled onchange="loadRiwayatTab(this.value)"><option value="">-- Pilih Kelas Dulu --</option></select></div><div class="form-group"><label>Jenis Transaksi</label><select id="tabJenis"><option value="Setor">Setor Tabungan</option><option value="Tarik">Tarik Tabungan</option></select></div><div class="form-group"><label>Jumlah (Rp)</label><input type="number" id="tabJumlah" placeholder="5000"></div><button class="btn" onclick="simpanTabungan()">Simpan Transaksi</button></div><div style="background:#fff; padding:15px; border-radius:8px; margin-top:15px;"><h3 style="margin-bottom:10px">Riwayat & Saldo</h3><div id="riwayatTab">Pilih siswa untuk melihat riwayat</div></div>`; loadKelasDropdown('tabKelas');
     } else if(page === 'inputSPP') { title.innerText = "Input Pembayaran SPP"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Pilih Kelas</label><select id="sppKelas" onchange="loadSiswaForSPP(this.value)"><option value="">-- Pilih Kelas --</option></select></div><div class="form-group"><label>Pilih Siswa</label><select id="sppSiswa" disabled><option value="">-- Pilih Kelas Dulu --</option></select></div><div class="form-group"><label>Bulan (Contoh: 2024-05)</label><input type="month" id="sppBulan"></div><div class="form-group"><label>Status</label><select id="sppStatus"><option value="Lunas">Lunas</option><option value="Belum Bayar">Belum Bayar</option></select></div><button class="btn" onclick="simpanSPP()">Simpan Status SPP</button></div>`; loadKelasDropdown('sppKelas');
     } else if(page === 'inputTugas') { title.innerText = "Input Tugas / PR"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Pilih Kelas</label><select id="tugasKelas"><option value="">Loading...</option></select></div><div class="form-group"><label>Mata Pelajaran</label><input id="tugasMapel" placeholder="Contoh: Matematika"></div><div class="form-group"><label>Isi Tugas / PR</label><textarea id="tugasIsi" rows="4" placeholder="Tulis detail tugas..."></textarea></div><button class="btn" onclick="simpanTugas()">Bagikan Tugas</button></div>`; loadKelasDropdown('tugasKelas');
@@ -155,8 +159,82 @@ function loadSiswaForNilai(k) { loadSiswaForDropdown(k, 'nilaiSiswa'); }
 function simpanNilai() { let u=document.getElementById('nilaiSiswa').value, t=document.getElementById('nilaiTipe').value, m=document.getElementById('nilaiMapel').value, n=document.getElementById('nilaiAngka').value; if(!u||!m||!n) return alert("Lengkapi data!"); db.ref('nilai/'+u+'/'+t+'/'+m).set(n); alert("Nilai tersimpan!"); document.getElementById('nilaiMapel').value=''; document.getElementById('nilaiAngka').value=''; }
 
 // --- FUNGSI JADWAL ---
-function simpanJadwal() { let k=document.getElementById('jadwalKelas').value, h=document.getElementById('jadwalHari').value, j=document.getElementById('jadwalJam').value, m=document.getElementById('jadwalMapel').value; if(!k||!j||!m) return alert("Lengkapi data!"); let newRef=db.ref('jadwal/'+k+'/'+h).push(); newRef.set({jam:j, mapel:m}); alert("Jadwal tersimpan!"); document.getElementById('jadwalJam').value=''; document.getElementById('jadwalMapel').value=''; loadJadwalList(k); }
-function loadJadwalList(k) { if(!k) return; let list=document.getElementById('listJadwal'); list.innerHTML='Memuat...'; db.ref('jadwal/'+k).on('value', (snap)=>{ let h=''; if(snap.exists()) { snap.forEach((hariC)=>{ h+=`<strong>${hariC.key}</strong><ul style="padding-left:20px;font-size:0.85rem;">`; hariC.forEach((jC)=>{ let j=jC.val(); h+=`<li>${j.jam} - ${j.mapel}</li>`; }); h+=`</ul>`; }); } else { h='Belum ada jadwal'; } list.innerHTML=h; }); }
+function simpanJadwal() { 
+    let k = document.getElementById('jadwalKelas').value, 
+        h = document.getElementById('jadwalHari').value, 
+        j = document.getElementById('jadwalJam').value, 
+        m = document.getElementById('jadwalMapel').value,
+        key = document.getElementById('jadwalKey').value; 
+        
+    if(!k||!j||!m) return alert("Lengkapi data!"); 
+    
+    if(key) {
+        db.ref('jadwal/'+k+'/'+h+'/'+key).update({jam:j, mapel:m});
+        alert("Jadwal berhasil diupdate!");
+    } else {
+        let newRef = db.ref('jadwal/'+k+'/'+h).push(); 
+        newRef.set({jam:j, mapel:m}); 
+        alert("Jadwal tersimpan!");
+    }
+    
+    resetFormJadwal();
+    loadJadwalList(k); 
+}
+
+function editJadwal(kelas, hari, key, jam, mapel) {
+    document.getElementById('jadwalKelas').value = kelas;
+    document.getElementById('jadwalHari').value = hari;
+    document.getElementById('jadwalJam').value = jam;
+    document.getElementById('jadwalMapel').value = mapel;
+    document.getElementById('jadwalKey').value = key;
+    
+    window.scrollTo(0, 0);
+    document.getElementById('batalEditJadwal').style.display = 'block';
+}
+
+function deleteJadwal(kelas, hari, key) {
+    if(confirm("Yakin ingin menghapus jadwal ini?")) {
+        db.ref('jadwal/'+kelas+'/'+hari+'/'+key).remove();
+        alert("Jadwal dihapus!");
+        resetFormJadwal();
+        loadJadwalList(kelas);
+    }
+}
+
+function resetFormJadwal() {
+    document.getElementById('jadwalJam').value=''; 
+    document.getElementById('jadwalMapel').value='';
+    document.getElementById('jadwalKey').value = '';
+    document.getElementById('batalEditJadwal').style.display = 'none';
+}
+
+function loadJadwalList(k) { 
+    if(!k) return; 
+    let list=document.getElementById('listJadwal'); 
+    list.innerHTML='Memuat...'; 
+    db.ref('jadwal/'+k).on('value', (snap)=>{ 
+        let h=''; 
+        if(snap.exists()) { 
+            snap.forEach((hariC)=>{ 
+                h+=`<strong style="display:block;margin-top:10px;">${hariC.key}</strong><ul style="padding-left:0;list-style:none;font-size:0.85rem;">`; 
+                hariC.forEach((jC)=>{ 
+                    let j=jC.val(); 
+                    h+=`<li style="background:#f9f9f9; padding:8px; border-radius:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>${j.jam} - ${j.mapel}</span>
+                            <span>
+                                <button class="btn-action btn-edit" onclick="editJadwal('${k}','${hariC.key}','${jC.key}','${j.jam}','${j.mapel}')">Edit</button>
+                                <button class="btn-action btn-del" onclick="deleteJadwal('${k}','${hariC.key}','${jC.key}')">Hapus</button>
+                            </span>
+                         </li>`; 
+                }); 
+                h+=`</ul>`; 
+            }); 
+        } else { 
+            h='<p style="text-align:center">Belum ada jadwal</p>'; 
+        } 
+        list.innerHTML=h; 
+    }); 
+}
 
 // --- FUNGSI TABUNGAN ---
 function loadSiswaForTab(k) { loadSiswaForDropdown(k, 'tabSiswa'); }
