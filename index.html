@@ -119,7 +119,7 @@ function loadDashboard() {
 
                 <div class="folder-title">Laporan</div>
                 <div class="dash-grid">
-                    <div class="dash-card" onclick="loadPage('absenRange')"><div class="icon" style="background:#795548"><i class="fas fa-file-excel"></i></div><h3>Rekap Absensi</h3><p>Export Excel</p></div>
+                    <div class="dash-card" onclick="loadPage('absenRange')"><div class="icon" style="background:#795548"><i class="fas fa-print"></i></div><h3>Rekap Absensi</h3><p>Print / PDF</p></div>
                 </div>
             `;
         });
@@ -182,7 +182,7 @@ function loadPage(page) {
         loadAbsenHariIni();
     } 
     else if(page === 'absenRange') {
-        title.innerText = "Rekap & Export Excel";
+        title.innerText = "Rekap & Print Absensi";
         content.innerHTML = `
             <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
             <div style="background:#fff; padding:15px; border-radius:8px;">
@@ -423,12 +423,71 @@ function renderAbsenHariIni() { let f=document.getElementById('filterKelasAbsen'
     if(fil.length>0) { fil.forEach((d)=>{ h+=`<tr><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); } else { h+=`<tr><td colspan="5" style="text-align:center">Belum ada data</td></tr>`; } h+=`</tbody></table>`; document.getElementById('tabelAbsenHariIni').innerHTML=h;
 }
 
-// --- FUNGSI EXPORT EXCEL ---
-function cariRange() { let m=document.getElementById('tglMulai').value, a=document.getElementById('tglAkhir').value; document.getElementById('hasilRange').innerHTML='<p>Memuat...</p>';
-    db.ref('absensi').orderByKey().startAt(m).endAt(a).once('value').then((snap)=>{ let h=`<button class="btn btn-blue" onclick="exportExcel()" style="margin-bottom:10px;"><i class="fas fa-file-excel"></i> Export Excel</button><table id="tabelRange"><thead><tr><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody>`;
-        if(snap.exists()) { snap.forEach((dC)=>{ dC.forEach((c)=>{ let d=c.val(); h+=`<tr><td>${dC.key}</td><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); }); } else { h+='<tr><td colspan="6" style="text-align:center">Kosong</td></tr>'; } h+='</tbody></table>'; document.getElementById('hasilRange').innerHTML=h; });
+// --- FUNGSI REKAP & PRINT PDF ---
+function cariRange() { 
+    let m = document.getElementById('tglMulai').value, a = document.getElementById('tglAkhir').value; 
+    document.getElementById('hasilRange').innerHTML = '<p>Memuat data...</p>';
+    
+    db.ref('absensi').orderByKey().startAt(m).endAt(a).once('value').then((snap) => { 
+        let h = `<button class="btn btn-blue" onclick="printRekap()" style="margin-bottom:10px;"><i class="fas fa-print"></i> Print / Save PDF</button>
+                 <table id="tabelRange"><thead><tr><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody>`;
+        
+        if(snap.exists()) { 
+            snap.forEach((dC) => { 
+                dC.forEach((c) => { 
+                    let d = c.val(); 
+                    h += `<tr><td>${dC.key}</td><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; 
+                }); 
+            }); 
+        } else { 
+            h += '<tr><td colspan="6" style="text-align:center">Tidak ada data</td></tr>'; 
+        } 
+        h += '</tbody></table>'; 
+        document.getElementById('hasilRange').innerHTML = h; 
+    }); 
 }
-function exportExcel() { let t=document.getElementById('tabelRange'); if(!t) return alert("Kosong!"); let h=t.outerHTML; let b=new Blob(['\ufeff',h],{type:'application/vnd.ms-excel'}); let u=URL.createObjectURL(b); let a=document.createElement('a'); a.href=u; a.download='Rekap_Absensi.xls'; a.click(); }
+
+function printRekap() { 
+    let table = document.getElementById('tabelRange'); 
+    if(!table) return alert("Tidak ada data untuk dicetak!"); 
+    
+    // Buat iframe tersembunyi khusus untuk print agar tidak membuat aplikasi keluar/crash
+    let printFrame = document.createElement('iframe');
+    printFrame.style.position = 'absolute';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    document.body.appendChild(printFrame);
+    
+    let doc = printFrame.contentWindow.document;
+    doc.write(`
+        <html>
+        <head>
+            <title>Rekap Absensi</title>
+            <style>
+                body { font-family: sans-serif; padding: 20px; }
+                h2 { text-align: center; margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid #000; padding: 8px; font-size: 12px; text-align: left; }
+                th { background: #f0f0f0; }
+            </style>
+        </head>
+        <body>
+            <h2>Rekap Absensi Siswa</h2>
+            ${table.outerHTML}
+        </body>
+        </html>
+    `);
+    doc.close();
+    
+    // Tunggu sebentar lalu buka menu print
+    setTimeout(function() {
+        printFrame.contentWindow.focus();
+        printFrame.contentWindow.print();
+        // Hapus iframe setelah dicetak
+        setTimeout(function() { document.body.removeChild(printFrame); }, 500);
+    }, 300);
+}
 
 // JALANKAN APLIKASI
 loadDashboard();
