@@ -71,15 +71,20 @@ function loadDashboard() {
     db.ref('master_data/siswa').on('value', (snapSiswa) => {
         let totalSiswa = snapSiswa.numChildren();
         db.ref('absensi/' + dateString).on('value', (snapAbsen) => {
-            let hadir = 0, izin = 0;
-            snapAbsen.forEach((child) => { let d = child.val(); if (d.status === 'Izin' || d.status === 'Sakit') izin++; else if (d.masuk || d.keluar) hadir++; });
-            let alpa = totalSiswa - hadir - izin; if(alpa < 0) alpa = 0;
+            let hadir = 0, izin = 0, alpa = 0;
+            snapAbsen.forEach((child) => { 
+                let d = child.val(); 
+                if (d.status === 'Izin' || d.status === 'Sakit') izin++; 
+                else if (d.status === 'Alpa') alpa++;
+                else if (d.masuk || d.keluar) hadir++; 
+            });
+            let belumAbsen = totalSiswa - hadir - izin - alpa; if(belumAbsen < 0) belumAbsen = 0;
+            
             document.getElementById('mainContent').innerHTML = `
                 <div class="stat-card" onclick="loadPage('absenHariIni')"><div class="icon"><i class="fas fa-door-open"></i></div><div class="text"><h3>Hadir Hari Ini</h3><p>${hadir} Siswa</p></div></div>
                 <div class="stat-card" style="background:linear-gradient(135deg,#ff9800,#f57c00)" onclick="loadPage('absenHariIni')"><div class="icon"><i class="fas fa-exclamation-circle"></i></div><div class="text"><h3>Izin / Sakit</h3><p>${izin} Siswa</p></div></div>
-                
-                <!-- KOTAK BELUM ABSEN DIJADIKAN BISA DIKLIK -->
-                <div class="stat-card" style="background:linear-gradient(135deg,#f44336,#d32f2f)" onclick="loadPage('belumAbsen')"><div class="icon"><i class="fas fa-user-times"></i></div><div class="text"><h3>Belum Absen (Klik)</h3><p>${alpa} Siswa</p></div></div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#f44336,#d32f2f)" onclick="loadPage('absenHariIni')"><div class="icon"><i class="fas fa-user-times"></i></div><div class="text"><h3>Alpa</h3><p>${alpa} Siswa</p></div></div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#9e9e9e,#757575)" onclick="loadPage('belumAbsen')"><div class="icon"><i class="fas fa-hourglass-half"></i></div><div class="text"><h3>Belum Absen (Klik)</h3><p>${belumAbsen} Siswa</p></div></div>
                 
                 <div class="folder-title">Menu Utama</div>
                 <div class="dash-grid">
@@ -120,10 +125,15 @@ function loadPage(page) {
     } else if(page === 'dataKelas') { title.innerText = "Master Data Kelas"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><button class="btn" onclick="showFormKelas()">Tambah Kelas</button><div id="formKelasContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;"><h3 style="margin-bottom:10px">Form Kelas</h3><div class="form-group"><label>Nama Kelas (Contoh: 7A)</label><input id="kelasId" placeholder="7A"></div><div class="form-group"><label>Guru Piket / Wali Kelas</label><input id="kelasGuru" placeholder="Nama Guru"></div><button class="btn" onclick="saveKelas()">Simpan Kelas</button></div><table><thead><tr><th>Nama Kelas</th><th>Guru</th><th>Aksi</th></tr></thead><tbody id="bodyKelas"></tbody></table>`; loadKelas();
     } else if(page === 'absenHariIni') { title.innerText = "Absensi Hari Ini"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div class="form-group" style="background:#fff; padding:15px; border-radius:8px;"><label>Filter Berdasarkan Kelas</label><select id="filterKelasAbsen" onchange="renderAbsenHariIni()"><option value="">-- Semua Kelas --</option></select></div><div id="tabelAbsenHariIni">Memuat data...</div>`; loadAbsenHariIni();
     } 
-    // --- MENU BARU: BELUM ABSEN ---
+    // --- MENU BELUM ABSEN & ALPA ---
     else if(page === 'belumAbsen') { 
         title.innerText = "Siswa Belum Absen"; 
-        content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div id="listBelumAbsen" style="margin-top:15px;">Memuat data...</div>`; 
+        content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <div style="background:#fff; padding:15px; border-radius:8px; margin-bottom:15px; text-align:center;">
+                <p style="margin-bottom:10px;">Klik tombol di bawah untuk menandai siswa yang belum absen hari ini sebagai <b>ALPA</b>:</p>
+                <button class="btn btn-danger" onclick="tandaiSemuaAlpa()"><i class="fas fa-gavel"></i> Tandai Semua Sebagai ALFA</button>
+            </div>
+            <div id="listBelumAbsen">Memuat data...</div>`; 
         loadBelumAbsen(); 
     }
     else if(page === 'absenRange') { title.innerText = "Rekap & Export Excel"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Dari Tanggal</label><input type="date" id="tglMulai"></div><div class="form-group"><label>Sampai Tanggal</label><input type="date" id="tglAkhir"></div><button class="btn" onclick="cariRange()"><i class="fas fa-search"></i> Cari Data</button></div><div id="hasilRange" style="margin-top:15px;"></div>`;
@@ -170,78 +180,19 @@ function simpanNilai() { let u=document.getElementById('nilaiSiswa').value, t=do
 
 // --- FUNGSI JADWAL ---
 function simpanJadwal() { 
-    let k = document.getElementById('jadwalKelas').value, 
-        h = document.getElementById('jadwalHari').value, 
-        j = document.getElementById('jadwalJam').value, 
-        m = document.getElementById('jadwalMapel').value,
-        key = document.getElementById('jadwalKey').value; 
-        
+    let k = document.getElementById('jadwalKelas').value, h = document.getElementById('jadwalHari').value, j = document.getElementById('jadwalJam').value, m = document.getElementById('jadwalMapel').value, key = document.getElementById('jadwalKey').value; 
     if(!k||!j||!m) return alert("Lengkapi data!"); 
-    
-    if(key) {
-        db.ref('jadwal/'+k+'/'+h+'/'+key).update({jam:j, mapel:m});
-        alert("Jadwal berhasil diupdate!");
-    } else {
-        let newRef = db.ref('jadwal/'+k+'/'+h).push(); 
-        newRef.set({jam:j, mapel:m}); 
-        alert("Jadwal tersimpan!");
-    }
-    
-    resetFormJadwal();
-    loadJadwalList(k); 
+    if(key) { db.ref('jadwal/'+k+'/'+h+'/'+key).update({jam:j, mapel:m}); alert("Jadwal berhasil diupdate!"); } 
+    else { let newRef = db.ref('jadwal/'+k+'/'+h).push(); newRef.set({jam:j, mapel:m}); alert("Jadwal tersimpan!"); }
+    resetFormJadwal(); loadJadwalList(k); 
 }
-
-function editJadwal(kelas, hari, key, jam, mapel) {
-    document.getElementById('jadwalKelas').value = kelas;
-    document.getElementById('jadwalHari').value = hari;
-    document.getElementById('jadwalJam').value = jam;
-    document.getElementById('jadwalMapel').value = mapel;
-    document.getElementById('jadwalKey').value = key;
-    
-    window.scrollTo(0, 0);
-    document.getElementById('batalEditJadwal').style.display = 'block';
-}
-
-function deleteJadwal(kelas, hari, key) {
-    if(confirm("Yakin ingin menghapus jadwal này?")) {
-        db.ref('jadwal/'+kelas+'/'+hari+'/'+key).remove();
-        alert("Jadwal dihapus!");
-        resetFormJadwal();
-        loadJadwalList(kelas);
-    }
-}
-
-function resetFormJadwal() {
-    document.getElementById('jadwalJam').value=''; 
-    document.getElementById('jadwalMapel').value='';
-    document.getElementById('jadwalKey').value = '';
-    document.getElementById('batalEditJadwal').style.display = 'none';
-}
-
+function editJadwal(kelas, hari, key, jam, mapel) { document.getElementById('jadwalKelas').value = kelas; document.getElementById('jadwalHari').value = hari; document.getElementById('jadwalJam').value = jam; document.getElementById('jadwalMapel').value = mapel; document.getElementById('jadwalKey').value = key; window.scrollTo(0, 0); document.getElementById('batalEditJadwal').style.display = 'block'; }
+function deleteJadwal(kelas, hari, key) { if(confirm("Yakin ingin menghapus jadwal ini?")) { db.ref('jadwal/'+kelas+'/'+hari+'/'+key).remove(); alert("Jadwal dihapus!"); resetFormJadwal(); loadJadwalList(kelas); } }
+function resetFormJadwal() { document.getElementById('jadwalJam').value=''; document.getElementById('jadwalMapel').value=''; document.getElementById('jadwalKey').value = ''; document.getElementById('batalEditJadwal').style.display = 'none'; }
 function loadJadwalList(k) { 
-    if(!k) return; 
-    let list=document.getElementById('listJadwal'); 
-    list.innerHTML='Memuat...'; 
+    if(!k) return; let list=document.getElementById('listJadwal'); list.innerHTML='Memuat...'; 
     db.ref('jadwal/'+k).on('value', (snap)=>{ 
-        let h=''; 
-        if(snap.exists()) { 
-            snap.forEach((hariC)=>{ 
-                h+=`<strong style="display:block;margin-top:10px;">${hariC.key}</strong><ul style="padding-left:0;list-style:none;font-size:0.85rem;">`; 
-                hariC.forEach((jC)=>{ 
-                    let j=jC.val(); 
-                    h+=`<li style="background:#f9f9f9; padding:8px; border-radius:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
-                            <span>${j.jam} - ${j.mapel}</span>
-                            <span>
-                                <button class="btn-action btn-edit" onclick="editJadwal('${k}','${hariC.key}','${jC.key}','${j.jam}','${j.mapel}')">Edit</button>
-                                <button class="btn-action btn-del" onclick="deleteJadwal('${k}','${hariC.key}','${jC.key}')">Hapus</button>
-                            </span>
-                         </li>`; 
-                }); 
-                h+=`</ul>`; 
-            }); 
-        } else { 
-            h='<p style="text-align:center">Belum ada jadwal</p>'; 
-        } 
+        let h=''; if(snap.exists()) { snap.forEach((hariC)=>{ h+=`<strong style="display:block;margin-top:10px;">${hariC.key}</strong><ul style="padding-left:0;list-style:none;font-size:0.85rem;">`; hariC.forEach((jC)=>{ let j=jC.val(); h+=`<li style="background:#f9f9f9; padding:8px; border-radius:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;"><span>${j.jam} - ${j.mapel}</span><span><button class="btn-action btn-edit" onclick="editJadwal('${k}','${hariC.key}','${jC.key}','${j.jam}','${j.mapel}')">Edit</button><button class="btn-action btn-del" onclick="deleteJadwal('${k}','${hariC.key}','${jC.key}')">Hapus</button></span></li>`; }); h+=`</ul>`; }); } else { h='<p style="text-align:center">Belum ada jadwal</p>'; } 
         list.innerHTML=h; 
     }); 
 }
@@ -275,43 +226,64 @@ let allAbsenData=[];
 function loadAbsenHariIni() { let t=new Date(); let d=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); db.ref('absensi/'+d).on('value', (snap)=>{ allAbsenData=[]; snap.forEach((c)=>{ allAbsenData.push(c.val()); }); loadKelasDropdown('filterKelasAbsen'); renderAbsenHariIni(); }); }
 function renderAbsenHariIni() { let f=document.getElementById('filterKelasAbsen')?document.getElementById('filterKelasAbsen').value:""; let h=`<table><thead><tr><th>Nama</th><th>Kelas</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead><tbody>`; let fil=f?allAbsenData.filter(d=>d.kelas===f):allAbsenData; if(fil.length>0) { fil.forEach((d)=>{ h+=`<tr><td>${d.nama}</td><td>${d.kelas||'-'}</td><td>${d.masuk||'-'}</td><td>${d.keluar||'-'}</td><td>${d.status||'Hadir'}</td></tr>`; }); } else { h+=`<tr><td colspan="5" style="text-align:center">Belum ada data</td></tr>`; } h+=`</tbody></table>`; document.getElementById('tabelAbsenHariIni').innerHTML=h; }
 
-// --- FUNGSI SISWA BELUM ABSEN (BARU) ---
+// --- FUNGSI SISWA BELUM ABSEN & ALPA ---
 function loadBelumAbsen() {
     let today = new Date();
     let dateString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     
     db.ref('master_data/siswa').once('value').then((snapSiswa) => {
         let allSiswa = [];
-        snapSiswa.forEach((c) => {
-            allSiswa.push({ uid: c.key, nama: c.val().nama, kelas: c.val().kelas });
-        });
+        snapSiswa.forEach((c) => { allSiswa.push({ uid: c.key, nama: c.val().nama, kelas: c.val().kelas }); });
 
         db.ref('absensi/' + dateString).once('value').then((snapAbsen) => {
             let sudahAbsenUids = [];
             snapAbsen.forEach((c) => {
                 let d = c.val();
-                // Jika sudah ada catatan masuk, keluar, izin, atau sakit -> dianggap sudah absen
-                if (d.masuk || d.keluar || d.status) {
-                    sudahAbsenUids.push(c.key);
-                }
+                if (d.masuk || d.keluar || d.status) { sudahAbsenUids.push(c.key); }
             });
 
-            // Filter siswa yang UID-nya tidak ada di list sudahAbsenUids
             let belumAbsen = allSiswa.filter(s => !sudahAbsenUids.includes(s.uid));
-            
             let html = `<p style="margin-bottom:10px; font-weight:bold;">Total: ${belumAbsen.length} Siswa Belum Absen</p>`;
             html += `<table><thead><tr><th>Nama</th><th>Kelas</th></tr></thead><tbody>`;
             if(belumAbsen.length > 0) {
-                belumAbsen.forEach(s => {
-                    html += `<tr><td>${s.nama}</td><td>${s.kelas}</td></tr>`;
-                });
+                belumAbsen.forEach(s => { html += `<tr><td>${s.nama}</td><td>${s.kelas}</td></tr>`; });
             } else {
                 html += `<tr><td colspan="2" style="text-align:center">Semua siswa sudah absen!</td></tr>`;
             }
             html += `</tbody></table>`;
+            let el = document.getElementById('listBelumAbsen'); if(el) el.innerHTML = html;
+        });
+    });
+}
+
+function tandaiSemuaAlpa() {
+    if(!confirm("Yakin tandai semua siswa yang belum absen hari ini sebagai ALFA?")) return;
+    let today = new Date();
+    let dateString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    
+    db.ref('master_data/siswa').once('value').then((snapSiswa) => {
+        let allSiswa = [];
+        snapSiswa.forEach((c) => { allSiswa.push({ uid: c.key, nama: c.val().nama, kelas: c.val().kelas }); });
+
+        db.ref('absensi/' + dateString).once('value').then((snapAbsen) => {
+            let sudahAbsenUids = [];
+            snapAbsen.forEach((c) => {
+                let d = c.val();
+                if (d.masuk || d.keluar || d.status) { sudahAbsenUids.push(c.key); }
+            });
+
+            let belumAbsen = allSiswa.filter(s => !sudahAbsenUids.includes(s.uid));
+            if(belumAbsen.length === 0) return alert("Tidak ada siswa yang perlu ditandai Alpa.");
             
-            let el = document.getElementById('listBelumAbsen');
-            if(el) el.innerHTML = html;
+            let updates = {};
+            belumAbsen.forEach(s => {
+                updates[s.uid] = { nama: s.nama, kelas: s.kelas, status: "Alpa" };
+            });
+            
+            db.ref('absensi/' + dateString).update(updates).then(() => {
+                alert("Semua siswa belum absen telah ditandai sebagai ALFA.");
+                loadBelumAbsen(); // Refresh list
+            });
         });
     });
 }
