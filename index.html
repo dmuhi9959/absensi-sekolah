@@ -37,7 +37,6 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 .nav-item.active{color:#1a8a6f} .nav-item i{font-size:1.2rem}
 .badge-lunas{background:#4caf50;color:#fff;padding:3px 8px;border-radius:5px;font-size:0.7rem}
 .badge-belum{background:#f44336;color:#fff;padding:3px 8px;border-radius:5px;font-size:0.7rem}
-/* Warna Baris Disiplin */
 .row-hijau{background-color:#e8f5e9 !important;}
 .row-merah{background-color:#ffebee !important;}
 </style>
@@ -66,7 +65,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-let photoBase64 = ""; let siswaCache = {}; 
+let photoBase64 = ""; let siswaCache = {}; let kelasCache = {}; 
 
 function goHome() { location.reload(); }
 
@@ -129,8 +128,25 @@ function loadPage(page) {
         title.innerText = "Master Data Siswa";
         content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><button class="btn" onclick="showFormSiswa()"><i class="fas fa-plus"></i> Tambah Siswa Baru</button><div id="formContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;"><h3 style="margin-bottom:10px">Form Siswa</h3><input type="hidden" id="siswaKey"><div class="form-group" style="text-align:center;"><label>Foto Profil (Opsional)</label><img id="photoPreview" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-top:10px;display:none;background:#ddd;border:2px solid #1a8a6f" src="" alt="Preview"><input type="file" id="siswaPhoto" accept="image/*" onchange="handlePhotoUpload(event)" style="margin-top:10px;"></div><div class="form-group"><label>UID Kartu RFID</label><input id="siswaUid" placeholder="Contoh: A1B2C3D4"></div><div class="form-group"><label>NIS (Nomor Induk Siswa)</label><input id="siswaNis" placeholder="Contoh: 12345"></div><div class="form-group"><label>Nama Siswa</label><input id="siswaNama" placeholder="Nama Lengkap"></div><div class="form-group"><label>Kelas</label><select id="siswaKelas"><option value="">Loading...</option></select></div><div class="form-group"><label>ID Telegram Ortu</label><input id="siswaTelegram" placeholder="Contoh: 123456789"></div><button class="btn" onclick="saveSiswa()">Simpan Data</button></div><table><thead><tr><th>Nama</th><th>Kelas</th><th>Aksi</th></tr></thead><tbody id="bodySiswa"></tbody></table>`;
         loadKelasDropdown('siswaKelas'); loadSiswa();
-    } else if(page === 'dataKelas') { title.innerText = "Master Data Kelas"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><button class="btn" onclick="showFormKelas()">Tambah Kelas</button><div id="formKelasContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;"><h3 style="margin-bottom:10px">Form Kelas</h3><div class="form-group"><label>Nama Kelas (Contoh: 7A)</label><input id="kelasId" placeholder="7A"></div><div class="form-group"><label>Guru Piket / Wali Kelas</label><input id="kelasGuru" placeholder="Nama Guru"></div><button class="btn" onclick="saveKelas()">Simpan Kelas</button></div><table><thead><tr><th>Nama Kelas</th><th>Guru</th><th>Aksi</th></tr></thead><tbody id="bodyKelas"></tbody></table>`; loadKelas();
-    } else if(page === 'absenHariIni') { title.innerText = "Absensi Hari Ini"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div class="form-group" style="background:#fff; padding:15px; border-radius:8px;"><label>Filter Berdasarkan Kelas</label><select id="filterKelasAbsen" onchange="renderAbsenHariIni()"><option value="">-- Semua Kelas --</option></select></div><div id="tabelAbsenHariIni">Memuat data...</div>`; loadAbsenHariIni();
+    } 
+    // --- MENU DATA KELAS (DENGAN EDIT) ---
+    else if(page === 'dataKelas') { 
+        title.innerText = "Master Data Kelas"; 
+        content.innerHTML = `
+            <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <button class="btn" onclick="showFormKelas()">Tambah Kelas</button>
+            <div id="formKelasContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;">
+                <h3 style="margin-bottom:10px">Form Kelas</h3>
+                <input type="hidden" id="kelasKey">
+                <div class="form-group"><label>Nama Kelas (Contoh: 7A)</label><input id="kelasId" placeholder="7A"></div>
+                <div class="form-group"><label>Guru Piket / Wali Kelas</label><input id="kelasGuru" placeholder="Nama Guru"></div>
+                <button class="btn" onclick="saveKelas()">Simpan Kelas</button>
+                <button class="btn btn-danger" id="batalEditKelas" onclick="resetFormKelas()" style="display:none; margin-top:10px;">Batal Edit</button>
+            </div>
+            <table><thead><tr><th>Nama Kelas</th><th>Guru</th><th>Aksi</th></tr></thead><tbody id="bodyKelas"></tbody></table>`; 
+        loadKelas();
+    } 
+    else if(page === 'absenHariIni') { title.innerText = "Absensi Hari Ini"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div class="form-group" style="background:#fff; padding:15px; border-radius:8px;"><label>Filter Berdasarkan Kelas</label><select id="filterKelasAbsen" onchange="renderAbsenHariIni()"><option value="">-- Semua Kelas --</option></select></div><div id="tabelAbsenHariIni">Memuat data...</div>`; loadAbsenHariIni();
     } 
     else if(page === 'belumAbsen') { 
         title.innerText = "Siswa Belum Absen"; 
@@ -155,13 +171,11 @@ function loadPage(page) {
             <div id="hasilSPP" style="margin-top:15px;"></div>
         `;
     }
-    // --- MENU REKAP DISIPLIN (BARU) ---
     else if(page === 'rekapDisiplin') {
         title.innerText = "Rekap Kedisiplinan Siswa";
         let today = new Date();
         let awalBulan = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-01';
         let akhirBulan = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()).padStart(2, '0');
-        
         content.innerHTML = `
             <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
             <div style="background:#fff; padding:15px; border-radius:8px;">
@@ -202,11 +216,62 @@ function saveSiswa() { let k = document.getElementById('siswaKey').value, uid = 
 function deleteSiswa(uid) { if(confirm("Hapus siswa ini?")) db.ref('master_data/siswa/' + uid).remove(); }
 function loadSiswa() { db.ref('master_data/siswa').on('value', (snap) => { siswaCache = {}; let h = ''; if(!snap.exists()) h = '<tr><td colspan="3" style="text-align:center">Kosong</td></tr>'; snap.forEach((c) => { let d = c.val(); siswaCache[c.key] = d; let p = d.photo ? `<img src="${d.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;vertical-align:middle">` : `<i class="fas fa-user-circle" style="font-size:40px;color:#ccc;margin-right:10px;vertical-align:middle"></i>`; h += `<tr><td>${p} ${d.nama}<br><small style="color:#999">NIS: ${d.nis||'-'}</small></td><td>${d.kelas}</td><td><button class="btn-action btn-edit" onclick="showFormSiswa('${c.key}')">Edit</button><button class="btn-action btn-del" onclick="deleteSiswa('${c.key}')">Hapus</button></td></tr>`; }); document.getElementById('bodySiswa').innerHTML = h; }); }
 
-// --- FUNGSI KELAS ---
-function showFormKelas() { document.getElementById('formKelasContainer').style.display='block'; document.getElementById('kelasId').value=''; document.getElementById('kelasGuru').value=''; }
-function saveKelas() { let n=document.getElementById('kelasId').value, g=document.getElementById('kelasGuru').value; if(!n) return alert("Nama kelas wajib!"); db.ref('master_data/kelas/'+n).set({nama_kelas:n, guru_piket:g}); alert("Tersimpan!"); document.getElementById('formKelasContainer').style.display='none'; }
-function deleteKelas(id) { if(confirm("Hapus kelas?")) db.ref('master_data/kelas/'+id).remove(); }
-function loadKelas() { db.ref('master_data/kelas').on('value', (snap) => { let h=''; if(!snap.exists()) h='<tr><td colspan="3" style="text-align:center">Kosong</td></tr>'; snap.forEach((c)=>{ let d=c.val(); h+=`<tr><td>${d.nama_kelas}</td><td>${d.guru_piket||'-'}</td><td><button class="btn-action btn-del" onclick="deleteKelas('${c.key}')">Hapus</button></td></tr>`; }); document.getElementById('bodyKelas').innerHTML=h; }); }
+// --- FUNGSI KELAS (DENGAN EDIT) ---
+function showFormKelas(key = null) {
+    document.getElementById('formKelasContainer').style.display = 'block';
+    if (key) {
+        let data = kelasCache[key];
+        document.getElementById('kelasKey').value = key;
+        document.getElementById('kelasId').value = data.nama_kelas;
+        document.getElementById('kelasGuru').value = data.guru_piket || '';
+        document.getElementById('batalEditKelas').style.display = 'block';
+    } else {
+        resetFormKelas();
+    }
+}
+function resetFormKelas() {
+    document.getElementById('kelasKey').value = '';
+    document.getElementById('kelasId').value = '';
+    document.getElementById('kelasGuru').value = '';
+    document.getElementById('batalEditKelas').style.display = 'none';
+}
+function saveKelas() {
+    let key = document.getElementById('kelasKey').value;
+    let n = document.getElementById('kelasId').value;
+    let g = document.getElementById('kelasGuru').value;
+    if(!n) return alert("Nama kelas wajib!");
+    
+    if (key) {
+        db.ref('master_data/kelas/' + key).update({nama_kelas: n, guru_piket: g});
+        alert("Data kelas berhasil diupdate!");
+    } else {
+        db.ref('master_data/kelas/' + n).set({nama_kelas: n, guru_piket: g});
+        alert("Data kelas tersimpan!");
+    }
+    resetFormKelas();
+    document.getElementById('formKelasContainer').style.display = 'none';
+}
+function deleteKelas(id) { if(confirm("Hapus kelas?")) db.ref('master_data/kelas/' + id).remove(); }
+function loadKelas() {
+    db.ref('master_data/kelas').on('value', (snap) => {
+        kelasCache = {};
+        let h = '';
+        if(!snap.exists()) h = '<tr><td colspan="3" style="text-align:center">Kosong</td></tr>';
+        snap.forEach((c) => {
+            let d = c.val();
+            kelasCache[c.key] = d;
+            h += `<tr>
+                <td>${d.nama_kelas}</td>
+                <td>${d.guru_piket || '-'}</td>
+                <td>
+                    <button class="btn-action btn-edit" onclick="showFormKelas('${c.key}')">Edit</button>
+                    <button class="btn-action btn-del" onclick="deleteKelas('${c.key}')">Hapus</button>
+                </td>
+            </tr>`;
+        });
+        document.getElementById('bodyKelas').innerHTML = h;
+    });
+}
 
 // --- FUNGSI IZIN ---
 function loadSiswaForIzin(k) { loadSiswaForDropdown(k, 'izinSiswa'); }
@@ -277,7 +342,7 @@ function loadDataSPP() {
 function downloadXLSSPP() { let table = document.getElementById('tabelSPP'); if(!table) return alert("Tidak ada data!"); let html = '<meta charset="UTF-8"><table border="1">'; let rows = table.querySelectorAll("tr"); for (let i = 0; i < rows.length; i++) { html += '<tr>'; let cols = rows[i].querySelectorAll("td, th"); for (let j = 0; j < cols.length; j++) { html += '<td>' + cols[j].innerText + '</td>'; } html += '</tr>'; } html += '</table>'; let url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html); let a = document.createElement('a'); a.href = url; a.download = 'Rekap_SPP.xls'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 function copyTableSPP() { let table = document.getElementById('tabelSPP'); if(!table) return alert("Tidak ada data!"); let range = document.createRange(); range.selectNode(table); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); try { document.execCommand('copy'); alert('Data SPP berhasil disalin!'); } catch (err) { alert('Gagal menyalin data.'); } window.getSelection().removeAllRanges(); }
 
-// --- FUNGSI REKAP DISIPLIN (TERLAMBAT & RAJIN) ---
+// --- FUNGSI REKAP DISIPLIN ---
 function cariDataDisiplin() {
     let m = document.getElementById('disMulai').value;
     let a = document.getElementById('disAkhir').value;
@@ -299,7 +364,7 @@ function cariDataDisiplin() {
                     let d = siswaChild.val();
                     if(siswaStats[uid] && d.masuk) {
                         siswaStats[uid].hadir++;
-                        let jamMasuk = d.masuk.substring(0, 5); // Ambil HH:MM
+                        let jamMasuk = d.masuk.substring(0, 5);
                         if(jamMasuk > batas) {
                             siswaStats[uid].telat++;
                         } else {
@@ -310,7 +375,6 @@ function cariDataDisiplin() {
             });
             
             let arr = Object.values(siswaStats).filter(s => s.hadir > 0);
-            // Urutkan berdasarkan yang paling sering telat di atas
             arr.sort((a,b) => b.telat - a.telat);
             
             let html = `<div style="display:flex;gap:10px;margin-bottom:10px;">
@@ -324,7 +388,6 @@ function cariDataDisiplin() {
                 html += '<tr><td colspan="6" style="text-align:center">Tidak ada data absensi pada rentang tanggal ini.</td></tr>';
             } else {
                 arr.forEach(s => {
-                    // Hijau jika tidak pernah telat. Merah jika pernah telat.
                     let rowClass = s.telat > 0 ? 'row-merah' : 'row-hijau';
                     let statusText = s.telat > 0 ? `<span class="badge-belum">Sering Terlambat</span>` : `<span class="badge-lunas">Rajin / Tepat Waktu</span>`;
                     html += `<tr class="${rowClass}">
