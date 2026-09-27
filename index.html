@@ -37,6 +37,9 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 .nav-item.active{color:#1a8a6f} .nav-item i{font-size:1.2rem}
 .badge-lunas{background:#4caf50;color:#fff;padding:3px 8px;border-radius:5px;font-size:0.7rem}
 .badge-belum{background:#f44336;color:#fff;padding:3px 8px;border-radius:5px;font-size:0.7rem}
+/* Warna Baris Disiplin */
+.row-hijau{background-color:#e8f5e9 !important;}
+.row-merah{background-color:#ffebee !important;}
 </style>
 </head>
 <body>
@@ -113,6 +116,7 @@ function loadDashboard() {
                 <div class="folder-title">Laporan</div>
                 <div class="dash-grid">
                     <div class="dash-card" onclick="loadPage('absenRange')"><div class="icon" style="background:#3f51b5"><i class="fas fa-file-excel"></i></div><h3>Rekap Absensi</h3><p>Export Excel</p></div>
+                    <div class="dash-card" onclick="loadPage('rekapDisiplin')"><div class="icon" style="background:#e91e63"><i class="fas fa-clock"></i></div><h3>Rekap Disiplin</h3><p>Terlambat & Rajin</p></div>
                 </div>`;
         });
     });
@@ -138,7 +142,6 @@ function loadPage(page) {
             <div id="listBelumAbsen">Memuat data...</div>`; 
         loadBelumAbsen(); 
     }
-    // --- MENU REKAP SPP (BARU) ---
     else if(page === 'rekapSPP') {
         title.innerText = "Rekap Pembayaran SPP";
         let today = new Date();
@@ -150,6 +153,25 @@ function loadPage(page) {
                 <button class="btn" onclick="loadDataSPP()"><i class="fas fa-search"></i> Cek Status SPP</button>
             </div>
             <div id="hasilSPP" style="margin-top:15px;"></div>
+        `;
+    }
+    // --- MENU REKAP DISIPLIN (BARU) ---
+    else if(page === 'rekapDisiplin') {
+        title.innerText = "Rekap Kedisiplinan Siswa";
+        let today = new Date();
+        let awalBulan = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-01';
+        let akhirBulan = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()).padStart(2, '0');
+        
+        content.innerHTML = `
+            <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <div style="background:#fff; padding:15px; border-radius:8px;">
+                <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Sistem akan memindai siapa yang terlambat (masuk setelah jam yang ditentukan).</p>
+                <div class="form-group"><label>Dari Tanggal</label><input type="date" id="disMulai" value="${awalBulan}"></div>
+                <div class="form-group"><label>Sampai Tanggal</label><input type="date" id="disAkhir" value="${akhirBulan}"></div>
+                <div class="form-group"><label>Batas Jam Terlambat</label><input type="time" id="disBatas" value="07:15"></div>
+                <button class="btn" onclick="cariDataDisiplin()"><i class="fas fa-search"></i> Cek Kedisiplinan</button>
+            </div>
+            <div id="hasilDisiplin" style="margin-top:15px;"></div>
         `;
     }
     else if(page === 'absenRange') { title.innerText = "Rekap & Export Excel"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Dari Tanggal</label><input type="date" id="tglMulai"></div><div class="form-group"><label>Sampai Tanggal</label><input type="date" id="tglAkhir"></div><button class="btn" onclick="cariRange()"><i class="fas fa-search"></i> Cari Data</button></div><div id="hasilRange" style="margin-top:15px;"></div>`;
@@ -222,16 +244,14 @@ function loadRiwayatTab(u) { if(!u) return; let d=document.getElementById('riway
 function loadSiswaForSPP(k) { loadSiswaForDropdown(k, 'sppSiswa'); }
 function simpanSPP() { let u=document.getElementById('sppSiswa').value, b=document.getElementById('sppBulan').value, s=document.getElementById('sppStatus').value; if(!u||!b) return alert("Lengkapi data!"); db.ref('spp/'+u+'/'+b).set({status:s}); alert("Status SPP tersimpan!"); }
 
-// --- FUNGSI REKAP SPP (BARU) ---
+// --- FUNGSI REKAP SPP ---
 function loadDataSPP() {
     let bulan = document.getElementById('sppBulanRekap').value;
     if(!bulan) return alert("Pilih bulan dulu!");
     document.getElementById('hasilSPP').innerHTML = '<p>Memuat data...</p>';
-    
     db.ref('master_data/siswa').once('value').then((snapSiswa) => {
         let siswaList = [];
         snapSiswa.forEach(c => siswaList.push({uid: c.key, nama: c.val().nama, kelas: c.val().kelas}));
-        
         db.ref('spp').once('value').then((snapSPP) => {
             let sppData = snapSPP.val() || {};
             let html = `<div style="display:flex;gap:10px;margin-bottom:10px;">
@@ -240,7 +260,6 @@ function loadDataSPP() {
                         </div>
                         <table id="tabelSPP" style="background:#fff;">
                             <thead><tr><th>Nama</th><th>Kelas</th><th>Status SPP</th></tr></thead><tbody>`;
-            
             siswaList.forEach(s => {
                 let status = "Belum Bayar";
                 let badgeClass = "badge-belum";
@@ -255,38 +274,76 @@ function loadDataSPP() {
         });
     });
 }
-function downloadXLSSPP() { 
-    let table = document.getElementById('tabelSPP'); 
-    if(!table) return alert("Tidak ada data!"); 
-    let html = '<meta charset="UTF-8"><table border="1">'; 
-    let rows = table.querySelectorAll("tr"); 
-    for (let i = 0; i < rows.length; i++) { 
-        html += '<tr>'; 
-        let cols = rows[i].querySelectorAll("td, th"); 
-        for (let j = 0; j < cols.length; j++) { 
-            html += '<td>' + cols[j].innerText + '</td>'; 
-        } 
-        html += '</tr>'; 
-    } 
-    html += '</table>'; 
-    let url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html); 
-    let a = document.createElement('a'); 
-    a.href = url; 
-    a.download = 'Rekap_SPP.xls'; 
-    document.body.appendChild(a); 
-    a.click(); 
-    document.body.removeChild(a); 
+function downloadXLSSPP() { let table = document.getElementById('tabelSPP'); if(!table) return alert("Tidak ada data!"); let html = '<meta charset="UTF-8"><table border="1">'; let rows = table.querySelectorAll("tr"); for (let i = 0; i < rows.length; i++) { html += '<tr>'; let cols = rows[i].querySelectorAll("td, th"); for (let j = 0; j < cols.length; j++) { html += '<td>' + cols[j].innerText + '</td>'; } html += '</tr>'; } html += '</table>'; let url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html); let a = document.createElement('a'); a.href = url; a.download = 'Rekap_SPP.xls'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function copyTableSPP() { let table = document.getElementById('tabelSPP'); if(!table) return alert("Tidak ada data!"); let range = document.createRange(); range.selectNode(table); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); try { document.execCommand('copy'); alert('Data SPP berhasil disalin!'); } catch (err) { alert('Gagal menyalin data.'); } window.getSelection().removeAllRanges(); }
+
+// --- FUNGSI REKAP DISIPLIN (TERLAMBAT & RAJIN) ---
+function cariDataDisiplin() {
+    let m = document.getElementById('disMulai').value;
+    let a = document.getElementById('disAkhir').value;
+    let batas = document.getElementById('disBatas').value;
+    if(!m || !a || !batas) return alert("Lengkapi tanggal dan batas jam terlambat!");
+    
+    document.getElementById('hasilDisiplin').innerHTML = '<p>Memuat data...</p>';
+    
+    db.ref('master_data/siswa').once('value').then(snapSiswa => {
+        let siswaStats = {};
+        snapSiswa.forEach(c => {
+            siswaStats[c.key] = { nama: c.val().nama, kelas: c.val().kelas, hadir: 0, tepat: 0, telat: 0 };
+        });
+        
+        db.ref('absensi').orderByKey().startAt(m).endAt(a).once('value').then(snapAbsen => {
+            snapAbsen.forEach(dateChild => {
+                dateChild.forEach(siswaChild => {
+                    let uid = siswaChild.key;
+                    let d = siswaChild.val();
+                    if(siswaStats[uid] && d.masuk) {
+                        siswaStats[uid].hadir++;
+                        let jamMasuk = d.masuk.substring(0, 5); // Ambil HH:MM
+                        if(jamMasuk > batas) {
+                            siswaStats[uid].telat++;
+                        } else {
+                            siswaStats[uid].tepat++;
+                        }
+                    }
+                });
+            });
+            
+            let arr = Object.values(siswaStats).filter(s => s.hadir > 0);
+            // Urutkan berdasarkan yang paling sering telat di atas
+            arr.sort((a,b) => b.telat - a.telat);
+            
+            let html = `<div style="display:flex;gap:10px;margin-bottom:10px;">
+                            <button class="btn btn-blue" style="margin-top:0;flex:1" onclick="downloadXLSDisiplin()"><i class="fas fa-download"></i> Excel</button>
+                            <button class="btn btn-green" style="margin-top:0;flex:1" onclick="copyTableDisiplin()"><i class="fas fa-copy"></i> Copy Data</button>
+                        </div>
+                        <table id="tabelDisiplin" style="background:#fff;">
+                            <thead><tr><th>Nama</th><th>Kelas</th><th>Total Hadir</th><th>Tepat Waktu</th><th>Terlambat</th><th>Status</th></tr></thead><tbody>`;
+            
+            if(arr.length === 0) {
+                html += '<tr><td colspan="6" style="text-align:center">Tidak ada data absensi pada rentang tanggal ini.</td></tr>';
+            } else {
+                arr.forEach(s => {
+                    // Hijau jika tidak pernah telat. Merah jika pernah telat.
+                    let rowClass = s.telat > 0 ? 'row-merah' : 'row-hijau';
+                    let statusText = s.telat > 0 ? `<span class="badge-belum">Sering Terlambat</span>` : `<span class="badge-lunas">Rajin / Tepat Waktu</span>`;
+                    html += `<tr class="${rowClass}">
+                                <td>${s.nama}</td>
+                                <td>${s.kelas}</td>
+                                <td style="text-align:center">${s.hadir}</td>
+                                <td style="text-align:center">${s.tepat}</td>
+                                <td style="text-align:center">${s.telat}</td>
+                                <td>${statusText}</td>
+                             </tr>`;
+                });
+            }
+            html += '</tbody></table>';
+            document.getElementById('hasilDisiplin').innerHTML = html;
+        });
+    });
 }
-function copyTableSPP() { 
-    let table = document.getElementById('tabelSPP'); 
-    if(!table) return alert("Tidak ada data!"); 
-    let range = document.createRange(); 
-    range.selectNode(table); 
-    window.getSelection().removeAllRanges(); 
-    window.getSelection().addRange(range); 
-    try { document.execCommand('copy'); alert('Data SPP berhasil disalin!'); } catch (err) { alert('Gagal menyalin data.'); } 
-    window.getSelection().removeAllRanges(); 
-}
+function downloadXLSDisiplin() { let table = document.getElementById('tabelDisiplin'); if(!table) return alert("Tidak ada data!"); let html = '<meta charset="UTF-8"><table border="1">'; let rows = table.querySelectorAll("tr"); for (let i = 0; i < rows.length; i++) { html += '<tr>'; let cols = rows[i].querySelectorAll("td, th"); for (let j = 0; j < cols.length; j++) { html += '<td>' + cols[j].innerText + '</td>'; } html += '</tr>'; } html += '</table>'; let url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html); let a = document.createElement('a'); a.href = url; a.download = 'Rekap_Disiplin.xls'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function copyTableDisiplin() { let table = document.getElementById('tabelDisiplin'); if(!table) return alert("Tidak ada data!"); let range = document.createRange(); range.selectNode(table); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); try { document.execCommand('copy'); alert('Data Disiplin berhasil disalin!'); } catch (err) { alert('Gagal menyalin data.'); } window.getSelection().removeAllRanges(); }
 
 // --- FUNGSI TUGAS ---
 function simpanTugas() { let k=document.getElementById('tugasKelas').value, m=document.getElementById('tugasMapel').value, i=document.getElementById('tugasIsi').value; if(!k||!m||!i) return alert("Lengkapi data!"); let t=new Date(); let ds=t.getDate()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear(); db.ref('tugas/'+k).push({tanggal:ds, mapel:m, isi:i}); alert("Tugas dibagikan!"); document.getElementById('tugasMapel').value=''; document.getElementById('tugasIsi').value=''; }
