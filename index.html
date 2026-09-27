@@ -35,6 +35,8 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
 .nav-item{display:flex;flex-direction:column;align-items:center;color:#888;cursor:pointer;font-size:0.7rem;gap:4px}
 .nav-item.active{color:#1a8a6f} .nav-item i{font-size:1.2rem}
+.badge-lunas{background:#4caf50;color:#fff;padding:3px 8px;border-radius:5px;font-size:0.7rem}
+.badge-belum{background:#f44336;color:#fff;padding:3px 8px;border-radius:5px;font-size:0.7rem}
 </style>
 </head>
 <body>
@@ -98,7 +100,8 @@ function loadDashboard() {
                     <div class="dash-card" onclick="loadPage('inputNilai')"><div class="icon" style="background:#2196f3"><i class="fas fa-pen"></i></div><h3>Input Nilai</h3><p>Harian/Ujian</p></div>
                     <div class="dash-card" onclick="loadPage('inputJadwal')"><div class="icon" style="background:#9c27b0"><i class="fas fa-calendar-alt"></i></div><h3>Jadwal Pelajaran</h3><p>Per Kelas</p></div>
                     <div class="dash-card" onclick="loadPage('inputTabungan')"><div class="icon" style="background:#4caf50"><i class="fas fa-wallet"></i></div><h3>Tabungan</h3><p>Setor/Tarik</p></div>
-                    <div class="dash-card" onclick="loadPage('inputSPP')"><div class="icon" style="background:#009688"><i class="fas fa-money-bill-wave"></i></div><h3>Pembayaran SPP</h3><p>Status Bulanan</p></div>
+                    <div class="dash-card" onclick="loadPage('inputSPP')"><div class="icon" style="background:#009688"><i class="fas fa-money-bill-wave"></i></div><h3>Input SPP</h3><p>Catat Pembayaran</p></div>
+                    <div class="dash-card" onclick="loadPage('rekapSPP')"><div class="icon" style="background:#ff5722"><i class="fas fa-file-invoice-dollar"></i></div><h3>Rekap SPP</h3><p>Lunas & Belum Bayar</p></div>
                 </div>
                 <div class="folder-title">Komunikasi & Reward</div>
                 <div class="dash-grid">
@@ -125,7 +128,6 @@ function loadPage(page) {
     } else if(page === 'dataKelas') { title.innerText = "Master Data Kelas"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><button class="btn" onclick="showFormKelas()">Tambah Kelas</button><div id="formKelasContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;"><h3 style="margin-bottom:10px">Form Kelas</h3><div class="form-group"><label>Nama Kelas (Contoh: 7A)</label><input id="kelasId" placeholder="7A"></div><div class="form-group"><label>Guru Piket / Wali Kelas</label><input id="kelasGuru" placeholder="Nama Guru"></div><button class="btn" onclick="saveKelas()">Simpan Kelas</button></div><table><thead><tr><th>Nama Kelas</th><th>Guru</th><th>Aksi</th></tr></thead><tbody id="bodyKelas"></tbody></table>`; loadKelas();
     } else if(page === 'absenHariIni') { title.innerText = "Absensi Hari Ini"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div class="form-group" style="background:#fff; padding:15px; border-radius:8px;"><label>Filter Berdasarkan Kelas</label><select id="filterKelasAbsen" onchange="renderAbsenHariIni()"><option value="">-- Semua Kelas --</option></select></div><div id="tabelAbsenHariIni">Memuat data...</div>`; loadAbsenHariIni();
     } 
-    // --- MENU BELUM ABSEN & ALPA ---
     else if(page === 'belumAbsen') { 
         title.innerText = "Siswa Belum Absen"; 
         content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
@@ -135,6 +137,20 @@ function loadPage(page) {
             </div>
             <div id="listBelumAbsen">Memuat data...</div>`; 
         loadBelumAbsen(); 
+    }
+    // --- MENU REKAP SPP (BARU) ---
+    else if(page === 'rekapSPP') {
+        title.innerText = "Rekap Pembayaran SPP";
+        let today = new Date();
+        let bulanKini = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+        content.innerHTML = `
+            <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <div style="background:#fff; padding:15px; border-radius:8px;">
+                <div class="form-group"><label>Pilih Bulan</label><input type="month" id="sppBulanRekap" value="${bulanKini}"></div>
+                <button class="btn" onclick="loadDataSPP()"><i class="fas fa-search"></i> Cek Status SPP</button>
+            </div>
+            <div id="hasilSPP" style="margin-top:15px;"></div>
+        `;
     }
     else if(page === 'absenRange') { title.innerText = "Rekap & Export Excel"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Dari Tanggal</label><input type="date" id="tglMulai"></div><div class="form-group"><label>Sampai Tanggal</label><input type="date" id="tglAkhir"></div><button class="btn" onclick="cariRange()"><i class="fas fa-search"></i> Cari Data</button></div><div id="hasilRange" style="margin-top:15px;"></div>`;
     } else if(page === 'inputIzin') { title.innerText = "Input Izin/Sakit"; content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><div style="background:#fff; padding:15px; border-radius:8px;"><div class="form-group"><label>Pilih Kelas</label><select id="izinKelas" onchange="loadSiswaForIzin(this.value)"><option value="">-- Pilih Kelas --</option></select></div><div class="form-group"><label>Pilih Siswa</label><select id="izinSiswa" disabled><option value="">-- Pilih Kelas Dulu --</option></select></div><div class="form-group"><label>Status</label><select id="izinStatus"><option value="Izin">Izin</option><option value="Sakit">Sakit</option></select></div><button class="btn" onclick="simpanIzin()">Simpan Izin/Sakit</button></div>`; loadKelasDropdown('izinKelas');
@@ -206,6 +222,72 @@ function loadRiwayatTab(u) { if(!u) return; let d=document.getElementById('riway
 function loadSiswaForSPP(k) { loadSiswaForDropdown(k, 'sppSiswa'); }
 function simpanSPP() { let u=document.getElementById('sppSiswa').value, b=document.getElementById('sppBulan').value, s=document.getElementById('sppStatus').value; if(!u||!b) return alert("Lengkapi data!"); db.ref('spp/'+u+'/'+b).set({status:s}); alert("Status SPP tersimpan!"); }
 
+// --- FUNGSI REKAP SPP (BARU) ---
+function loadDataSPP() {
+    let bulan = document.getElementById('sppBulanRekap').value;
+    if(!bulan) return alert("Pilih bulan dulu!");
+    document.getElementById('hasilSPP').innerHTML = '<p>Memuat data...</p>';
+    
+    db.ref('master_data/siswa').once('value').then((snapSiswa) => {
+        let siswaList = [];
+        snapSiswa.forEach(c => siswaList.push({uid: c.key, nama: c.val().nama, kelas: c.val().kelas}));
+        
+        db.ref('spp').once('value').then((snapSPP) => {
+            let sppData = snapSPP.val() || {};
+            let html = `<div style="display:flex;gap:10px;margin-bottom:10px;">
+                            <button class="btn btn-blue" style="margin-top:0;flex:1" onclick="downloadXLSSPP()"><i class="fas fa-download"></i> Excel</button>
+                            <button class="btn btn-green" style="margin-top:0;flex:1" onclick="copyTableSPP()"><i class="fas fa-copy"></i> Copy Data</button>
+                        </div>
+                        <table id="tabelSPP" style="background:#fff;">
+                            <thead><tr><th>Nama</th><th>Kelas</th><th>Status SPP</th></tr></thead><tbody>`;
+            
+            siswaList.forEach(s => {
+                let status = "Belum Bayar";
+                let badgeClass = "badge-belum";
+                if(sppData[s.uid] && sppData[s.uid][bulan] && sppData[s.uid][bulan].status === "Lunas") {
+                    status = "Lunas";
+                    badgeClass = "badge-lunas";
+                }
+                html += `<tr><td>${s.nama}</td><td>${s.kelas}</td><td><span class="${badgeClass}">${status}</span></td></tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('hasilSPP').innerHTML = html;
+        });
+    });
+}
+function downloadXLSSPP() { 
+    let table = document.getElementById('tabelSPP'); 
+    if(!table) return alert("Tidak ada data!"); 
+    let html = '<meta charset="UTF-8"><table border="1">'; 
+    let rows = table.querySelectorAll("tr"); 
+    for (let i = 0; i < rows.length; i++) { 
+        html += '<tr>'; 
+        let cols = rows[i].querySelectorAll("td, th"); 
+        for (let j = 0; j < cols.length; j++) { 
+            html += '<td>' + cols[j].innerText + '</td>'; 
+        } 
+        html += '</tr>'; 
+    } 
+    html += '</table>'; 
+    let url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html); 
+    let a = document.createElement('a'); 
+    a.href = url; 
+    a.download = 'Rekap_SPP.xls'; 
+    document.body.appendChild(a); 
+    a.click(); 
+    document.body.removeChild(a); 
+}
+function copyTableSPP() { 
+    let table = document.getElementById('tabelSPP'); 
+    if(!table) return alert("Tidak ada data!"); 
+    let range = document.createRange(); 
+    range.selectNode(table); 
+    window.getSelection().removeAllRanges(); 
+    window.getSelection().addRange(range); 
+    try { document.execCommand('copy'); alert('Data SPP berhasil disalin!'); } catch (err) { alert('Gagal menyalin data.'); } 
+    window.getSelection().removeAllRanges(); 
+}
+
 // --- FUNGSI TUGAS ---
 function simpanTugas() { let k=document.getElementById('tugasKelas').value, m=document.getElementById('tugasMapel').value, i=document.getElementById('tugasIsi').value; if(!k||!m||!i) return alert("Lengkapi data!"); let t=new Date(); let ds=t.getDate()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear(); db.ref('tugas/'+k).push({tanggal:ds, mapel:m, isi:i}); alert("Tugas dibagikan!"); document.getElementById('tugasMapel').value=''; document.getElementById('tugasIsi').value=''; }
 
@@ -230,18 +312,15 @@ function renderAbsenHariIni() { let f=document.getElementById('filterKelasAbsen'
 function loadBelumAbsen() {
     let today = new Date();
     let dateString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-    
     db.ref('master_data/siswa').once('value').then((snapSiswa) => {
         let allSiswa = [];
         snapSiswa.forEach((c) => { allSiswa.push({ uid: c.key, nama: c.val().nama, kelas: c.val().kelas }); });
-
         db.ref('absensi/' + dateString).once('value').then((snapAbsen) => {
             let sudahAbsenUids = [];
             snapAbsen.forEach((c) => {
                 let d = c.val();
                 if (d.masuk || d.keluar || d.status) { sudahAbsenUids.push(c.key); }
             });
-
             let belumAbsen = allSiswa.filter(s => !sudahAbsenUids.includes(s.uid));
             let html = `<p style="margin-bottom:10px; font-weight:bold;">Total: ${belumAbsen.length} Siswa Belum Absen</p>`;
             html += `<table><thead><tr><th>Nama</th><th>Kelas</th></tr></thead><tbody>`;
@@ -255,34 +334,26 @@ function loadBelumAbsen() {
         });
     });
 }
-
 function tandaiSemuaAlpa() {
     if(!confirm("Yakin tandai semua siswa yang belum absen hari ini sebagai ALFA?")) return;
     let today = new Date();
     let dateString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-    
     db.ref('master_data/siswa').once('value').then((snapSiswa) => {
         let allSiswa = [];
         snapSiswa.forEach((c) => { allSiswa.push({ uid: c.key, nama: c.val().nama, kelas: c.val().kelas }); });
-
         db.ref('absensi/' + dateString).once('value').then((snapAbsen) => {
             let sudahAbsenUids = [];
             snapAbsen.forEach((c) => {
                 let d = c.val();
                 if (d.masuk || d.keluar || d.status) { sudahAbsenUids.push(c.key); }
             });
-
             let belumAbsen = allSiswa.filter(s => !sudahAbsenUids.includes(s.uid));
             if(belumAbsen.length === 0) return alert("Tidak ada siswa yang perlu ditandai Alpa.");
-            
             let updates = {};
-            belumAbsen.forEach(s => {
-                updates[s.uid] = { nama: s.nama, kelas: s.kelas, status: "Alpa" };
-            });
-            
+            belumAbsen.forEach(s => { updates[s.uid] = { nama: s.nama, kelas: s.kelas, status: "Alpa" }; });
             db.ref('absensi/' + dateString).update(updates).then(() => {
-                alert("Semua siswa belum absen telah ditandai sebagai ALFA.");
-                loadBelumAbsen(); // Refresh list
+                alert("Semua siswa belum absen telah ditandai sebagai ALPA.");
+                loadBelumAbsen(); 
             });
         });
     });
