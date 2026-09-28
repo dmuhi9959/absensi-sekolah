@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>GERBANG SEKOLAH - Admin</title>
+<title>Gerbang Sekolah - Admin</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
@@ -42,7 +42,7 @@ td{padding:10px;border-bottom:1px solid #eee;font-size:0.8rem;color:#333}
 </style>
 </head>
 <body>
-<div class="header" id="pageTitle">Jendela Sekolah (Admin)</div>
+<div class="header" id="pageTitle">Gerbang Sekolah (Admin)</div>
 <div class="content" id="mainContent"></div>
 <div class="bottom-nav">
     <div class="nav-item active" onclick="goHome()"><i class="fas fa-home"></i> Home</div>
@@ -129,7 +129,6 @@ function loadPage(page) {
         content.innerHTML = `<button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> Kembali</button><button class="btn" onclick="showFormSiswa()"><i class="fas fa-plus"></i> Tambah Siswa Baru</button><div id="formContainer" style="display:none; margin-top:15px; background:#fff; padding:15px; border-radius:8px;"><h3 style="margin-bottom:10px">Form Siswa</h3><input type="hidden" id="siswaKey"><div class="form-group" style="text-align:center;"><label>Foto Profil (Opsional)</label><img id="photoPreview" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-top:10px;display:none;background:#ddd;border:2px solid #1a8a6f" src="" alt="Preview"><input type="file" id="siswaPhoto" accept="image/*" onchange="handlePhotoUpload(event)" style="margin-top:10px;"></div><div class="form-group"><label>UID Kartu RFID</label><input id="siswaUid" placeholder="Contoh: A1B2C3D4"></div><div class="form-group"><label>NIS (Nomor Induk Siswa)</label><input id="siswaNis" placeholder="Contoh: 12345"></div><div class="form-group"><label>Nama Siswa</label><input id="siswaNama" placeholder="Nama Lengkap"></div><div class="form-group"><label>Kelas</label><select id="siswaKelas"><option value="">Loading...</option></select></div><div class="form-group"><label>ID Telegram Ortu</label><input id="siswaTelegram" placeholder="Contoh: 123456789"></div><button class="btn" onclick="saveSiswa()">Simpan Data</button></div><table><thead><tr><th>Nama</th><th>Kelas</th><th>Aksi</th></tr></thead><tbody id="bodySiswa"></tbody></table>`;
         loadKelasDropdown('siswaKelas'); loadSiswa();
     } 
-    // --- MENU DATA KELAS (DENGAN EDIT) ---
     else if(page === 'dataKelas') { 
         title.innerText = "Master Data Kelas"; 
         content.innerHTML = `
