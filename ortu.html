@@ -50,11 +50,17 @@ td{padding:8px;border-bottom:1px solid #eee}
 .nav-item i{font-size:1.1rem}
 .footer-text{text-align:center;font-size:0.75rem;color:#888;padding:20px;margin-top:auto}
 
-/* Style untuk Total Poin Prestasi */
+/* Style Papan Prestasi & Total Poin */
 .total-poin-box{background:linear-gradient(135deg,#fff8e1,#ffecb3);padding:15px;border-radius:10px;text-align:center;margin-bottom:15px;border:1px solid #ffe082}
 .total-poin-box .lbl{font-size:0.8rem;color:#f57c00;font-weight:bold;text-transform:uppercase}
 .total-poin-box .val{font-size:2rem;font-weight:bold;color:#e65100;margin:5px 0}
 .total-poin-box .desc{font-size:0.7rem;color:#888}
+.papan-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #eee}
+.papan-item i{color:#ffc107;font-size:1.5rem}
+.papan-item .info{flex:1}
+.papan-item .info strong{color:#333;font-size:0.9rem}
+.papan-item .info small{color:#888}
+.papan-item .info p{font-size:0.85rem;margin-top:2px;color:#1a8a6f;font-weight:bold}
 </style>
 </head>
 <body>
@@ -128,11 +134,15 @@ function showPage(page, siswaData = null) {
                     <div class="profile-class">Kelas: ${data.kelas}</div>
                     <div class="profile-wali" id="bodyWaliKelas">Wali Kelas: Memuat...</div>
                  </div>`;
+        
+        // PAPAN PRESTASI GLOBAL (WALL OF FAME)
+        html += `<div class="card"><h3><i class="fas fa-trophy"></i> Papan Prestasi Sekolah</h3><div id="bodyGlobalPrestasi">Memuat...</div></div>`;
+        
         html += `<div class="card"><h3>Statistik Absensi Bulanan</h3><div id="bodyStatistik" class="stat-box"><div class="stat-item"><div class="num">-</div><div class="lbl">Hadir</div></div><div class="stat-item"><div class="num">-</div><div class="lbl">Izin</div></div><div class="stat-item"><div class="num">-</div><div class="lbl">Alpa</div></div></div></div>`;
-        html += `<div class="card"><h3>Prestasi & Reward</h3><div id="bodyPrestasi">Memuat...</div></div>`;
+        html += `<div class="card"><h3>Prestasi Anak & Total Poin</h3><div id="bodyPrestasi">Memuat...</div></div>`;
         html += `<div class="card"><h3>Catatan Wali Kelas</h3><div id="bodyCatatan">Memuat...</div></div>`;
         html += `<div class="card"><h3>Absensi 7 Hari Terakhir</h3><table><thead><tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="bodyRiwayat"><tr><td colspan="3" class="text-center">Memuat...</td></tr></tbody></table></div>`;
-        loadWaliKelas(data.kelas); loadStatistikBulanan(); loadPrestasi(); loadCatatan(); loadRiwayatAbsen();
+        loadWaliKelas(data.kelas); loadGlobalPrestasi(); loadStatistikBulanan(); loadPrestasi(); loadCatatan(); loadRiwayatAbsen();
     } 
     else if(page === 'akademik') {
         html += `<div class="card"><h3>Tugas / PR Sekolah</h3><div id="bodyTugas">Memuat...</div></div>`;
@@ -187,6 +197,32 @@ function loadWaliKelas(kelas) {
     });
 }
 
+// --- FUNGSI PAPAN PRESTASI GLOBAL (WALL OF FAME) ---
+function loadGlobalPrestasi() {
+    db.ref('global_prestasi').limitToLast(5).once('value').then((snap) => {
+        let html = ''; 
+        if(snap.exists()) { 
+            let list = [];
+            snap.forEach(c => list.push(c.val()));
+            list.reverse(); // Tampilkan terbaru di atas
+            list.forEach(d => { 
+                html += `<div class="papan-item">
+                            <i class="fas fa-medal"></i>
+                            <div class="info">
+                                <strong>${d.nama} (${d.kelas})</strong><br>
+                                <small>${d.tanggal}</small>
+                                <p>${d.jenis}</p>
+                            </div>
+                            <span class="badge" style="background:#ff9800;">+${d.poin} Poin</span>
+                         </div>`; 
+            }); 
+        } else { 
+            html = '<p class="text-center">Belum ada prestasi yang dipublikasi.</p>'; 
+        }
+        let el = document.getElementById('bodyGlobalPrestasi'); if(el) el.innerHTML = html;
+    });
+}
+
 function loadStatistikBulanan() {
     let today = new Date(); let yearMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
     let hadir=0, izin=0;
@@ -205,7 +241,7 @@ function loadStatistikBulanan() {
     });
 }
 
-// --- FUNGSI PRESTASI (DENGAN TOTAL POIN) ---
+// --- FUNGSI PRESTASI PRIBADI (DENGAN TOTAL POIN) ---
 function loadPrestasi() {
     db.ref('prestasi/' + currentUid).once('value').then((snap) => {
         let html = ''; 
@@ -214,17 +250,15 @@ function loadPrestasi() {
         if(snap.exists()) { 
             let prestasiList = [];
             snap.forEach(c => prestasiList.push(c.val()));
-            prestasiList.reverse(); // Urutkan dari terbaru
+            prestasiList.reverse(); 
             prestasiList.forEach(d => { totalPoin += (d.poin || 0); });
             
-            // Tampilkan Kotak Total Poin
             html += `<div class="total-poin-box">
-                        <div class="lbl">Total Poin Reward</div>
+                        <div class="lbl">Total Poin Reward Anak Anda</div>
                         <div class="val">${totalPoin}</div>
                         <div class="desc">Pertahankan terus prestasimu!</div>
                      </div>`;
             
-            // Tampilkan Daftar Prestasi
             prestasiList.forEach(d => { 
                 html += `<div style="border-bottom:1px solid #eee;padding:10px 0;display:flex;justify-content:space-between;align-items:center;">
                             <div>
@@ -248,7 +282,7 @@ function loadCatatan() {
         if(snap.exists()) { 
             let catatanList = [];
             snap.forEach(c => catatanList.push(c.val()));
-            catatanList.reverse(); // Urutkan dari terbaru
+            catatanList.reverse(); 
             
             catatanList.forEach(d => { 
                 html += `<div style="border-left:3px solid #1a8a6f;background:#f8fffe;padding:10px;margin-bottom:10px;border-radius:5px;">
