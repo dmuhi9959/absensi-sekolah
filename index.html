@@ -414,9 +414,39 @@ function simpanTugas() { let k=document.getElementById('tugasKelas').value, m=do
 function loadSiswaForCatatan(k) { loadSiswaForDropdown(k, 'catatanSiswa'); }
 function simpanCatatan() { let u=document.getElementById('catatanSiswa').value, i=document.getElementById('catatanIsi').value; if(!u||!i) return alert("Lengkapi data!"); let t=new Date(); let ds=t.getDate()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear(); db.ref('catatan/'+u).push({tanggal:ds, isi:i}); alert("Catatan dikirim!"); document.getElementById('catatanIsi').value=''; }
 
-// --- FUNGSI PRESTASI ---
+// --- FUNGSI PRESTASI (DIPERBAIKI UNTUK PAPAN GLOBAL) ---
 function loadSiswaForPrestasi(k) { loadSiswaForDropdown(k, 'prestasiSiswa'); }
-function simpanPrestasi() { let u=document.getElementById('prestasiSiswa').value, j=document.getElementById('prestasiJenis').value, p=document.getElementById('prestasiPoin').value; if(!u||!j||!p) return alert("Lengkapi data!"); let t=new Date(); let ds=t.getDate()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear(); db.ref('prestasi/'+u).push({tanggal:ds, jenis:j, poin:parseInt(p)}); alert("Prestasi disimpan!"); document.getElementById('prestasiJenis').value=''; document.getElementById('prestasiPoin').value=''; }
+function simpanPrestasi() { 
+    let u=document.getElementById('prestasiSiswa').value, 
+        j=document.getElementById('prestasiJenis').value, 
+        p=document.getElementById('prestasiPoin').value; 
+    if(!u||!j||!p) return alert("Lengkapi data!"); 
+    
+    let t=new Date(); 
+    let ds=t.getDate()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear(); 
+    
+    // Ambil data siswa dari cache untuk mendapatkan nama dan kelas
+    let siswaData = siswaCache[u] || { nama: 'Siswa', kelas: '-' };
+    
+    let dataPrestasi = { 
+        uid: u,
+        nama: siswaData.nama,
+        kelas: siswaData.kelas,
+        tanggal: ds, 
+        jenis: j, 
+        poin: parseInt(p) 
+    };
+    
+    // 1. Simpan ke data pribadi siswa
+    db.ref('prestasi/'+u).push(dataPrestasi); 
+    
+    // 2. Publikasikan ke Papan Prestasi Global (Wall of Fame)
+    db.ref('global_prestasi').push(dataPrestasi);
+    
+    alert("Prestasi disimpan & dipublikasi ke semua orang tua!"); 
+    document.getElementById('prestasiJenis').value=''; 
+    document.getElementById('prestasiPoin').value=''; 
+}
 
 // --- FUNGSI AGENDA ---
 function simpanAgenda() { let t=document.getElementById('agendaTanggal').value, j=document.getElementById('agendaJudul').value, i=document.getElementById('agendaIsi').value; if(!t||!j||!i) return alert("Lengkapi data!"); db.ref('agenda').push({tanggal:t, judul:j, isi:i}); alert("Agenda dibagikan!"); document.getElementById('agendaJudul').value=''; document.getElementById('agendaIsi').value=''; loadAgendaList(); }
