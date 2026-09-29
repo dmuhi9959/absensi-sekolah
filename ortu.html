@@ -49,6 +49,12 @@ td{padding:8px;border-bottom:1px solid #eee}
 .nav-item.active{color:#1a8a6f}
 .nav-item i{font-size:1.1rem}
 .footer-text{text-align:center;font-size:0.75rem;color:#888;padding:20px;margin-top:auto}
+
+/* Style untuk Total Poin Prestasi */
+.total-poin-box{background:linear-gradient(135deg,#fff8e1,#ffecb3);padding:15px;border-radius:10px;text-align:center;margin-bottom:15px;border:1px solid #ffe082}
+.total-poin-box .lbl{font-size:0.8rem;color:#f57c00;font-weight:bold;text-transform:uppercase}
+.total-poin-box .val{font-size:2rem;font-weight:bold;color:#e65100;margin:5px 0}
+.total-poin-box .desc{font-size:0.7rem;color:#888}
 </style>
 </head>
 <body>
@@ -123,10 +129,10 @@ function showPage(page, siswaData = null) {
                     <div class="profile-wali" id="bodyWaliKelas">Wali Kelas: Memuat...</div>
                  </div>`;
         html += `<div class="card"><h3>Statistik Absensi Bulanan</h3><div id="bodyStatistik" class="stat-box"><div class="stat-item"><div class="num">-</div><div class="lbl">Hadir</div></div><div class="stat-item"><div class="num">-</div><div class="lbl">Izin</div></div><div class="stat-item"><div class="num">-</div><div class="lbl">Alpa</div></div></div></div>`;
+        html += `<div class="card"><h3>Prestasi & Reward</h3><div id="bodyPrestasi">Memuat...</div></div>`;
         html += `<div class="card"><h3>Catatan Wali Kelas</h3><div id="bodyCatatan">Memuat...</div></div>`;
-        html += `<div class="card"><h3>Prestasi / Reward</h3><div id="bodyPrestasi">Memuat...</div></div>`;
         html += `<div class="card"><h3>Absensi 7 Hari Terakhir</h3><table><thead><tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="bodyRiwayat"><tr><td colspan="3" class="text-center">Memuat...</td></tr></tbody></table></div>`;
-        loadWaliKelas(data.kelas); loadStatistikBulanan(); loadCatatan(); loadPrestasi(); loadRiwayatAbsen();
+        loadWaliKelas(data.kelas); loadStatistikBulanan(); loadPrestasi(); loadCatatan(); loadRiwayatAbsen();
     } 
     else if(page === 'akademik') {
         html += `<div class="card"><h3>Tugas / PR Sekolah</h3><div id="bodyTugas">Memuat...</div></div>`;
@@ -167,7 +173,6 @@ function showPage(page, siswaData = null) {
     content.innerHTML = html;
 }
 
-// --- FUNGSI LOAD WALI KELAS (BARU) ---
 function loadWaliKelas(kelas) {
     db.ref('master_data/kelas/' + kelas).once('value').then((snap) => {
         let d = snap.val();
@@ -200,6 +205,64 @@ function loadStatistikBulanan() {
     });
 }
 
+// --- FUNGSI PRESTASI (DENGAN TOTAL POIN) ---
+function loadPrestasi() {
+    db.ref('prestasi/' + currentUid).once('value').then((snap) => {
+        let html = ''; 
+        let totalPoin = 0;
+        
+        if(snap.exists()) { 
+            let prestasiList = [];
+            snap.forEach(c => prestasiList.push(c.val()));
+            prestasiList.reverse(); // Urutkan dari terbaru
+            prestasiList.forEach(d => { totalPoin += (d.poin || 0); });
+            
+            // Tampilkan Kotak Total Poin
+            html += `<div class="total-poin-box">
+                        <div class="lbl">Total Poin Reward</div>
+                        <div class="val">${totalPoin}</div>
+                        <div class="desc">Pertahankan terus prestasimu!</div>
+                     </div>`;
+            
+            // Tampilkan Daftar Prestasi
+            prestasiList.forEach(d => { 
+                html += `<div style="border-bottom:1px solid #eee;padding:10px 0;display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <strong style="font-size:0.9rem;">${d.jenis}</strong><br>
+                                <small style="color:#888;">${d.tanggal}</small>
+                            </div>
+                            <span class="badge" style="background:#ff9800;font-size:0.9rem;padding:5px 10px;">+${d.poin} Poin</span>
+                         </div>`; 
+            }); 
+        } else { 
+            html = '<p class="text-center">Belum ada prestasi yang dicatat.</p>'; 
+        }
+        let el = document.getElementById('bodyPrestasi'); if(el) el.innerHTML = html;
+    });
+}
+
+// --- FUNGSI CATATAN WALI (MENAMPILKAN SEMUA) ---
+function loadCatatan() {
+    db.ref('catatan/' + currentUid).once('value').then((snap) => {
+        let html = ''; 
+        if(snap.exists()) { 
+            let catatanList = [];
+            snap.forEach(c => catatanList.push(c.val()));
+            catatanList.reverse(); // Urutkan dari terbaru
+            
+            catatanList.forEach(d => { 
+                html += `<div style="border-left:3px solid #1a8a6f;background:#f8fffe;padding:10px;margin-bottom:10px;border-radius:5px;">
+                            <small style="color:#1a8a6f;font-weight:bold;"><i class="fas fa-calendar-day"></i> ${d.tanggal}</small>
+                            <p style="font-size:0.9rem;margin-top:5px;color:#333;line-height:1.4;">${d.isi}</p>
+                         </div>`; 
+            }); 
+        } else { 
+            html = '<p class="text-center">Belum ada catatan dari wali kelas.</p>'; 
+        }
+        let el = document.getElementById('bodyCatatan'); if(el) el.innerHTML = html;
+    });
+}
+
 function loadRiwayatAbsen() {
     let today = new Date(); let riwayatHtml = ''; let count = 0;
     for(let i=0; i<7; i++) {
@@ -212,20 +275,6 @@ function loadRiwayatAbsen() {
             if(count === 7) { let el = document.getElementById('bodyRiwayat'); if(el) el.innerHTML = riwayatHtml; }
         });
     }
-}
-
-function loadCatatan() {
-    db.ref('catatan/' + currentUid).limitToLast(3).once('value').then((snap) => {
-        let html = ''; if(snap.exists()) { snap.forEach(c => { let d=c.val(); html += `<div style="border-bottom:1px solid #eee;padding:8px 0;"><small>${d.tanggal}</small><p style="font-size:0.85rem;margin-top:3px;">${d.isi}</p></div>`; }); } else { html = '<p class="text-center">Belum ada catatan</p>'; }
-        let el = document.getElementById('bodyCatatan'); if(el) el.innerHTML = html;
-    });
-}
-
-function loadPrestasi() {
-    db.ref('prestasi/' + currentUid).limitToLast(5).once('value').then((snap) => {
-        let html = ''; if(snap.exists()) { snap.forEach(c => { let d=c.val(); html += `<div style="border-bottom:1px solid #eee;padding:8px 0;"><strong>${d.jenis}</strong> <span class="badge badge-lunas" style="float:right;">+${d.poin} Poin</span><br><small>${d.tanggal}</small></div>`; }); } else { html = '<p class="text-center">Belum ada prestasi</p>'; }
-        let el = document.getElementById('bodyPrestasi'); if(el) el.innerHTML = html;
-    });
 }
 
 function loadTugas(kelas) {
@@ -273,7 +322,7 @@ function loadUang() {
 function loadDisiplin() {
     let today = new Date();
     let yearMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
-    let batasJam = "07:15"; // Batas jam masuk sekolah
+    let batasJam = "07:15"; 
     
     let totalMasuk = 0, tepatWaktu = 0, terlambat = 0;
     let riwayatTelatHtml = '';
